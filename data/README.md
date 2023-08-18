@@ -27,7 +27,7 @@ To run the script, you need:
 Clone this repository to your local machine:
 
 ```bash
-git clone https://github.com/yourusername/async-mongodb-data-import.git
+git clone git@github.com:jaydestro/DCComics.git
 ```
 
 Install the required dependencies using `pip`:
