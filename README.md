@@ -7,7 +7,7 @@ This repository contains a simple web application built using Flask and MongoDB 
 - [Introduction](#introduction)
 - [Features](#features)
 - [Requirements](#requirements)
-- [Data Importer](#dataimporter)
+- [Data Importer](#data-importer)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
