@@ -8,6 +8,7 @@ This repository contains a Python script that demonstrates asynchronous data imp
 - [Requirements](#requirements)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Data Source](#data-source)
 - [License](#license)
 
 ## Introduction
@@ -55,6 +56,14 @@ Follow the prompts to provide the Cosmos DB connection string, database and coll
 
 - Modify the `async_mongodb_data_import.py` script if you need to customize the behavior or adapt it to your specific use case.
 - Ensure that you have a valid Azure Cosmos DB connection string and MongoDB-compatible setup before running the script.
+
+## Data Source
+
+The comic book data used in this project is sourced from the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) available on Kaggle. This dataset provides comprehensive information about various DC comic books, including details about issues, creators, release dates, and more.
+
+We are grateful to the creators of the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) for compiling and sharing this valuable collection of comic book information. The dataset forms the foundation of the comic book information available for search and exploration within the DC Comics Comic Book Search Web App.
+
+Please visit the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) on Kaggle to learn more about the dataset, its structure, and the original contributors.
 
 ## License
 

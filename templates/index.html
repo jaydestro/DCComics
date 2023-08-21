@@ -2,6 +2,7 @@
 <html>
 <head>
     <title>Comic Book Search</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <h1>Comic Book Keyword Search</h1>
@@ -10,5 +11,7 @@
         <input type="text" id="keyword" name="keyword" required>
         <button type="submit">Search</button>
     </form>
+    
+    <p>Total searchable comic books: {{ total_comics }}</p>
 </body>
 </html>

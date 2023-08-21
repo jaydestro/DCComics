@@ -8,6 +8,7 @@ This repository contains a simple web application built using Flask and MongoDB 
 - [Features](#features)
 - [Requirements](#requirements)
 - [Data Importer](#data-importer)
+- [Data Source](#data-source)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
@@ -44,6 +45,14 @@ Once you've imported the data, you can use the Comic Book Search Web App to sear
 
 [Go to Data Importer README](./data/README.md)
 
+## Data Source
+
+The comic book data used in this project is sourced from the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) available on Kaggle. This dataset provides comprehensive information about various DC comic books, including details about issues, creators, release dates, and more.
+
+We are grateful to the creators of the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) for compiling and sharing this valuable collection of comic book information. The dataset forms the foundation of the comic book information available for search and exploration within the DC Comics Comic Book Search Web App.
+
+Please visit the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) on Kaggle to learn more about the dataset, its structure, and the original contributors.
+
 ## Installation
 
 1. Clone this repository to your local machine:
@@ -55,7 +64,7 @@ git clone https://github.com/jaydestro/DCComics
 2. Install the required dependencies using pip:
 
 ```bash
-pip install Flask pymongo
+pip install Flask pymongo Flask-static
 ```
 
 3. Navigate to the project directory:

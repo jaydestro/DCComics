@@ -1,0 +1,10 @@
+body {
+    font-size: 18px;
+    background-color: white;
+    background-image: url('/static/images/batman_bg.jpg'); /* Path to your background image */
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: white;
+}

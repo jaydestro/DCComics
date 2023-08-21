@@ -2,20 +2,18 @@
 <html>
 <head>
     <title>Comic Book Search Results</title>
+    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
     <style>
-        table {
-            border-collapse: collapse;
-            width: 100%;
+        h1 {
+            text-shadow: 2px 2px 4px #000000;
         }
-
-        th, td {
-            border: 1px solid black;
-            padding: 8px;
-            text-align: left;
-        }
-
         th {
-            background-color: #f2f2f2;
+            font-size: 24px;
+        }
+        table {
+            margin: 20px;
+            table-layout: fixed;
+            word-wrap: break-word;
         }
     </style>
 </head>
@@ -24,7 +22,6 @@
     <table>
         <tr>
             <th>Issue Name</th>
-            <th>Issue Link</th>
             <th>Pencilers</th>
             <th>Cover Artists</th>
             <th>Inkers</th>
@@ -36,12 +33,10 @@
             <th>Rating</th>
             <th>Release Date</th>
             <th>Comic Series</th>
-            <th>Comic Type</th>
         </tr>
         {% for comic in comics %}
             <tr>
-                <td>{{ comic.Issue_Name }}</td>
-                <td><a href="{{ comic.Issue_Link }}" target="_blank">{{ comic.Issue_Link }}</a></td>
+                <td><a href="{{ comic.Issue_Link }}" target="_blank">{{ comic.Issue_Name }}</a></td>
                 <td>{{ comic.Pencilers }}</td>
                 <td>{{ comic.Cover_Artists }}</td>
                 <td>{{ comic.Inkers }}</td>
@@ -53,7 +48,6 @@
                 <td>{{ comic.Rating }}</td>
                 <td>{{ comic.Release_Date }}</td>
                 <td>{{ comic.Comic_Series }}</td>
-                <td>{{ comic.Comic_Type }}</td>
             </tr>
         {% endfor %}
     </table>
