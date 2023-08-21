@@ -76,6 +76,13 @@ Before running the Comic Book Search Web App, you need to configure the MongoDB 
 client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB connection details
 ```
 
+> **Note:** If you have a remote MongoDB server, replace the connection string in the code with the appropriate connection string for your server.
+>
+
+### Get Started with Azure Cosmos DB for MongoDB
+
+You can sign up for Azure Cosmos DB for MongoDB for free and start building scalable applications. To get started, visit [https://aka.ms/trycosmosdb](https://aka.ms/trycosmosdb) to create a free account and explore the powerful features of Azure Cosmos DB.
+
 3. Save and close the `app.py` file.
 
 4. Run the Flask app:
