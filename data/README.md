@@ -7,13 +7,12 @@ This repository contains a Python script that demonstrates asynchronous data imp
 - [Introduction](#introduction)
 - [Requirements](#requirements)
 - [Usage](#usage)
-- [Configuration](#configuration)
 - [Data Source](#data-source)
 - [License](#license)
 
 ## Introduction
 
-The `async_mongodb_data_import.py` script in this repository provides an example of how to efficiently import data from a CSV file into a MongoDB collection using asynchronous programming techniques. The script utilizes the `pymongo` library for interacting with MongoDB and `asyncio` for managing asynchronous tasks.
+The `importdata.py` script in this repository provides an example of how to efficiently import data from a CSV file into a MongoDB collection using asynchronous programming techniques. The script utilizes the `pymongo` library for interacting with MongoDB and `asyncio` for managing asynchronous tasks.
 
 ## Requirements
 
@@ -41,21 +40,16 @@ pip install pymongo
 Navigate to the repository directory:
 
 ```bash
-cd async-mongodb-data-import
+cd data
 ```
 
 Run the script:
 
 ```bash
-python async_mongodb_data_import.py
+python importdata.py
 ```
 
-Follow the prompts to provide the Cosmos DB connection string, database and collection names, and the CSV file location. The script will read the CSV data and asynchronously insert it into the specified MongoDB collection.
-
-## Configuration
-
-- Modify the `async_mongodb_data_import.py` script if you need to customize the behavior or adapt it to your specific use case.
-- Ensure that you have a valid Azure Cosmos DB connection string and MongoDB-compatible setup before running the script.
+Follow the prompts to provide the MongoDB connection string, database and collection names, and the CSV file location. The script will read the CSV data and asynchronously insert it into the specified MongoDB collection.
 
 ## Data Source
 
