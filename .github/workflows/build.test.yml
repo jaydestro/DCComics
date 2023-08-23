@@ -3,39 +3,39 @@ name: Test Build
 on:
   push:
     branches:
-      - '*'
+      - "*"
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Start MongoDB
-      run: docker run -d -p 27017:27017 --name mongodb mongo:latest
+      - name: Start MongoDB
+        run: docker run -d -p 27017:27017 --name mongodb mongo:latest
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.x
 
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Import data
-      run: |
-        python ./data/importdata.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-        - name: Run App
+      - name: Import data
+        run: |
+          python ./data/importdata.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
+
+      - name: Run App
         run: |
           python app.py &     # Run the Flask app in the background
           sleep 5             # Wait for the app to start
           curl -I http://127.0.0.1:5000/  # Make a request to test the app
           pkill -f app.py     # Stop the app
-   
-    - name: Stop MongoDB
-      run: docker stop mongodb
+
+      - name: Stop MongoDB
+        run: docker stop mongodb
