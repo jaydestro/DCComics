@@ -3,7 +3,7 @@ name: Test Build
 on:
   push:
     branches:
-      - main
+      - '*'
 
 jobs:
   build:
@@ -28,9 +28,10 @@ jobs:
     
     - name: Import data
       run: |
-        python ./data/importdata.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
+                python ./data/importdata.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
 
-    - name: Run App
+
+    - name: Run MongoDB tests
       run: |
         python app.py &
         sleep 5  # Wait for the app to start

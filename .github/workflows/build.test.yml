@@ -38,7 +38,7 @@ jobs:
           if [[ "$response" != *"Total searchable comic books: > 0"* ]]; then
             echo "Test failed: No searchable comic books found"
             exit 1
-          pkill -f app.py     # Stop the app
+          fi
 
       - name: Stop MongoDB
         run: docker stop mongodb
