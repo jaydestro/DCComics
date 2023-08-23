@@ -77,12 +77,12 @@ cd DCComics
 
 Before running the Comic Book Search Web App, you need to configure the MongoDB connection details and ensure that your MongoDB collection contains documents with fields matching the specified schema.
 
-1. Open the `app.py` file in a text editor.
+1. Open the `config.py` file in a text editor.
 
 2. Update the MongoDB connection details to match your MongoDB setup. Modify the following line with your MongoDB URI:
 
 ```bash 
-client = MongoClient("mongodb://localhost:27017/")  # Update with your MongoDB connection details
+MONGODB_URI = "mongodb://localhost:27017/" # Connection string for MongoDB server
 ```
 
 > **Note:** If you have a remote MongoDB server, replace the connection string in the code with the appropriate connection string for your server.
@@ -100,21 +100,35 @@ You can sign up for Azure Cosmos DB for MongoDB for free and start building scal
 python app.py
 ```
 
+The app will start running locally and you'll be able to access it in your web browser.
+
+Open a web browser and navigate to http://127.0.0.1:5000/ to access the Comic Book Search Web App.
+
+Use the search form to search for comic books based on keywords or browse by comic series. The results will be displayed in a table format.
+
+To stop the Flask app, press **Ctrl+C** in the terminal where the app is running.
+
+Remember to have a MongoDB server running and populated with comic book data for the app to work as expected.
+
 ## Usage
 
-1. Open a web browser and navigate to **http://127.0.0.1:5000/**.
+1. After following the installation steps mentioned in the previous section, you can access the DC Comics Comic Book Search Web App in your web browser by navigating to **http://127.0.0.1:5000/**.
 
-1. Enter a keyword related to the comic book you want to search for in the input field.
+2. The home page of the web app provides two main options for interacting with the comic book data:
 
-1. Click the "Search" button to initiate the search.
+   - **Keyword Search:** Enter a keyword related to the comic book you want to search for in the input field. Click the "Search" button to initiate the search. The search results will be displayed in a table format, showing various details of the matching comic books.
 
-1. The search results will be displayed in a table format, showing various details of the matching comic books.
+   - **Browse by Comic Series:** Use the dropdown menu to select a specific comic series. Click the "Browse" button to see all comic books from the selected series. The results will be displayed in a table format, similar to the keyword search.
 
-1. To search for another keyword, click the "Search for another keyword" link.
+3. For both the keyword search and browsing options, the search results table presents detailed information about the comic books. The columns include attributes such as issue name, pencilers, cover artists, writers, editors, release date, comic series, and more.
 
-1. To stop the Flask app, press **Ctrl+C** in the terminal where the app is running.
- 
-**Note:** Make sure your MongoDB collection contains documents with fields matching the specified schema.
+4. To search for another keyword or explore different comic series, you can return to the home page by clicking the "Search for another keyword" link.
+
+5. Once you're done using the web app, you can stop the Flask app by pressing **Ctrl+C** in the terminal where the app is running.
+
+Please note that the web app relies on the comic book data stored in your MongoDB collection. Ensure that your MongoDB server is running and contains the necessary comic book documents before using the search functionality.
+
+Feel free to explore, modify, and use this web app as a starting point for your own projects. If you encounter any issues or have suggestions for improvements, please feel free to open an issue or pull request.
 
 ## License
 

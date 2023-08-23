@@ -9,7 +9,22 @@
     <form method="POST">
         <label for="keyword">Enter Keyword: </label>
         <input type="text" id="keyword" name="keyword" required>
+
         <button type="submit">Search</button>
+    </form>
+    
+    <br>
+    <h2>Or browse by Comic Series:</h2>
+    <form method="POST">
+        <label for="series">Select Comic Series: </label>
+        <select id="series" name="series">
+            <option value="">All</option>
+            {% for series in comic_series %}
+                <option value="{{ series }}">{{ series }}</option>
+            {% endfor %}
+        </select>
+
+        <button type="submit">Browse</button>
     </form>
     
     <p>Total searchable comic books: {{ total_comics }}</p>
