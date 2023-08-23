@@ -34,11 +34,12 @@ jobs:
         run: |
           python app.py &     # Run the Flask app in the background
           sleep 5             # Wait for the app to start
-          response=$(curl -s http://127.0.0.1:5000/)
+          response=$(curl -s http://127.0.0.1:5000/)  # Fetch the rendered page
           if [[ "$response" != *"Total searchable comic books: > 0"* ]]; then
             echo "Test failed: No searchable comic books found"
             exit 1
           fi
+          pkill -f app.py     # Stop the app
 
       - name: Stop MongoDB
         run: docker stop mongodb
