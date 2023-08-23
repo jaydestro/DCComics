@@ -9,17 +9,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
-    services:
-      mongodb:
-        image: mongo:latest
-        ports:
-          - 27017:27017
-        options: >-
-          --health-cmd="mongo --eval=\"quit(db.runCommand({ ping: 1 }).ok ? 0 : 2)\""
-
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
+
+    - name: Start MongoDB
+      run: docker run -d -p 27017:27017 --name mongodb mongo:latest
 
     - name: Set up Python
       uses: actions/setup-python@v2
@@ -37,3 +32,6 @@ jobs:
         sleep 5  # Wait for the app to start
         curl -I http://127.0.0.1:5000/  # Make a request to test the app
         pkill -f app.py  # Stop the app
+
+    - name: Stop MongoDB
+      run: docker stop mongodb
