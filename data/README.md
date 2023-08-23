@@ -45,8 +45,20 @@ cd data
 
 Run the script:
 
+### Interactive Mode
+
+Run the script interactively:
+
 ```bash
 python importdata.py
+```
+
+### Command-Line Mode
+
+Alternatively, you can use command-line flags to provide the necessary information:
+
+```bash
+python importdata.py --connection-string "your-connection-string" --database-name "your-database-name" --collection-name "your-collection-name" --csv-file-location "path-to-your-csv-file"
 ```
 
 Follow the prompts to provide the MongoDB connection string, database and collection names, and the CSV file location. The script will read the CSV data and asynchronously insert it into the specified MongoDB collection.
