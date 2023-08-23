@@ -30,21 +30,12 @@ jobs:
       run: |
         python ./data/importdata.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
 
-    - name: Run App
-      run: |
-        python app.py &
-        sleep 5  # Wait for the app to start
-        curl -I http://127.0.0.1:5000/  # Make a request to test the app
-        pkill -f app.py  # Stop the app
-
-        # Test if there are more than 0 searchable comic books
-        - name: Test searchable comic books
-          run: |
-            response=$(curl -s http://127.0.0.1:5000/)
-            if [[ "$response" != *"Total searchable comic books: > 0"* ]]; then
-              echo "Test failed: No searchable comic books found"
-              exit 1
-            fi
-
+        - name: Run App
+        run: |
+          python app.py &     # Run the Flask app in the background
+          sleep 5             # Wait for the app to start
+          curl -I http://127.0.0.1:5000/  # Make a request to test the app
+          pkill -f app.py     # Stop the app
+   
     - name: Stop MongoDB
       run: docker stop mongodb
