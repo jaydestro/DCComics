@@ -34,10 +34,10 @@ jobs:
         run: |
           python ./data/data_import_cli.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
 
-      - name: Run MongoDB tests
+      - name: Run App test
         run: |
           python app.py &
-          sleep 5  # Wait for the app to start
+          sleep 30  # Wait for the app to start
           curl -I http://127.0.0.1:5000/  # Make a request to test the app
           pkill -f app.py  # Stop the app
     
