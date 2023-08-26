@@ -31,7 +31,7 @@ jobs:
     - name: Run App
       run: |
           python ./app.py &     # Run the Flask app in the background
-          sleep 5             # Wait for the app to start
+          sleep 20             # Wait for the app to start
           curl -I http://127.0.0.1:5000/  # Make a request to test the app
           pkill -f app.py     # Stop the app
 
