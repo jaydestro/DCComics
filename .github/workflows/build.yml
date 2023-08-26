@@ -1,4 +1,4 @@
-name: Build
+name: Test Build
 
 on:
   push:
@@ -26,7 +26,12 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
-    - name: Start App
+    - name: Import data
+      run: |
+                python ./data/data_import_cli.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
+
+
+    - name: Run MongoDB tests
       run: |
         python app.py &
         sleep 5  # Wait for the app to start
