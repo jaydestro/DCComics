@@ -1,39 +1,35 @@
+name: Run Flask App with MongoDB
+
 on:
-    push:
-        branches:
-            - 'development*'
+  push:
+    branches:
+      - "development*"
 
 jobs:
-  build:
+  run_app:
     runs-on: ubuntu-latest
 
+    services:
+      mongodb:
+        image: mongo:5.0
+        ports:
+          - 27017:27017
+        options: --health-cmd "mongo --version"
+
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Start MongoDB
-      run: docker run -d -p 27017:27017 --name mongodb mongo:latest
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.x
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-    
-    - name: Import data
-      run: |
-        python ./data/data_import_cli.py --connection-string "mongodb://localhost:27017/" --database-name "DCComics3" --collection-name "Comics" --csv-file-location "./data/Complete_DC_Comic_Books.csv"
-
-    - name: Run App
-      run: |
-          python ./app.py &     # Run the Flask app in the background
-          sleep 20             # Wait for the app to start
-          curl -I http://127.0.0.1:5000/  # Make a request to test the app
-          pkill -f app.py     # Stop the app
-
-    - name: Stop MongoDB
-      run: docker stop mongodb
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Run MongoDB and Flask app
+        run: |
+          mongod --fork --logpath /var/log/mongodb.log --dbpath /github/workspace/data/db
+          python app.py
