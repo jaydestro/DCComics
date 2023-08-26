@@ -31,5 +31,4 @@ jobs:
           pip install -r requirements.txt
       - name: Run MongoDB and Flask app
         run: |
-          mongod --fork --logpath /var/log/mongodb.log --dbpath /github/workspace/data/db
           python app.py
