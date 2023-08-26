@@ -12,7 +12,7 @@ This repository contains a Python script that demonstrates asynchronous data imp
 
 ## Introduction
 
-The `importdata.py` script in this repository provides an example of how to efficiently import data from a CSV file into a MongoDB collection using asynchronous programming techniques. The script utilizes the `pymongo` library for interacting with MongoDB and `asyncio` for managing asynchronous tasks.
+The `data_import_cli.py` script in this repository provides an example of how to efficiently import data from a CSV file into a MongoDB collection using asynchronous programming techniques. The script utilizes the `pymongo` library for interacting with MongoDB and `asyncio` for managing asynchronous tasks.
 
 ## Requirements
 
@@ -24,10 +24,10 @@ To run the script, you need:
 
 ## Usage
 
-Clone this repository to your local machine:
+Fork this repository to your GitHub account, then clone it to your local machine:
 
 ```bash
-git clone git@github.com:jaydestro/DCComics.git
+git clone git@github.com:yourusername/DCComics.git
 ```
 
 Install the required dependencies using `pip`:
@@ -50,7 +50,7 @@ Run the script:
 Run the script interactively:
 
 ```bash
-python importdata.py
+python data_import_cli.py
 ```
 
 ### Command-Line Mode
@@ -58,7 +58,7 @@ python importdata.py
 Alternatively, you can use command-line flags to provide the necessary information:
 
 ```bash
-python importdata.py --connection-string "your-connection-string" --database-name "your-database-name" --collection-name "your-collection-name" --csv-file-location "path-to-your-csv-file"
+python data_import_cli.py --connection-string "your-connection-string" --database-name "your-database-name" --collection-name "your-collection-name" --csv-file-location "path-to-your-csv-file"
 ```
 
 Follow the prompts to provide the MongoDB connection string, database and collection names, and the CSV file location. The script will read the CSV data and asynchronously insert it into the specified MongoDB collection.

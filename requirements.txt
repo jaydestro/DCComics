@@ -1,4 +1,4 @@
 Flask
 pymongo
 Flask-static
-uwsgi
+gunicorn

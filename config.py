@@ -1,1 +1,4 @@
-MONGODB_URI = "mongodb://127.0.0.1:27017/" # Connection string for MongoDB server
+# config.py
+
+MONGODB_URI = "mongodb://localhost:27017/"  # Replace with your MongoDB connection string
+CSV_DIRECTORY = "./data"  # Path to the directory containing CSV files

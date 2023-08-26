@@ -7,11 +7,12 @@ This repository contains a simple web application built using Flask and MongoDB 
 - [Introduction](#introduction)
 - [Features](#features)
 - [Requirements](#requirements)
-- [Data Importer](#data-importer)
-- [Data Source](#data-source)
+- [Components](#components)
 - [Installation](#installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Data Importer](#data-importer-cli)
+- [Data Source](#data-source)
 - [License](#license)
 
 ## Introduction
@@ -30,47 +31,47 @@ The DC Comics Comic Book Search Web App is designed to help users search for com
 - Flask
 - pymongo
 
+## Components
 
-## Data Importer
+### app.py
 
-If you have comic book data in a CSV format that you'd like to import into your MongoDB collection, we've provided a convenient data importer script in the `/data` directory. To get started with data import, follow the instructions in the [Data Importer README](./data/README.md).
+The main Flask application script that provides the user interface and handles user requests. It interacts with the MongoDB database to fetch and display comic book data.
 
-As part of this repository, we have included a CSV file named `Complete_DC_Comic_Books.csv` containing comic book information. You can use this file to populate your MongoDB collection with sample data. To import this CSV data, follow the instructions provided in the [Data Importer README](./data/README.md).
+### config.py
 
-The data importer script utilizes asynchronous programming techniques to efficiently import data from a CSV file into your MongoDB collection. It's a great way to populate your collection with comic book information for testing or demonstration purposes.
+Configuration file containing the MongoDB connection string (`MONGODB_URI`) and the CSV data directory path (`CSV_DIRECTORY`).
 
-Feel free to explore the data importer's README for detailed steps on how to run the script and import the provided `Complete_DC_Comic_Books.csv` data into the MongoDB collection.
+### importdata.py
 
-Once you've imported the data, you can use the Comic Book Search Web App to search and interact with the imported comic book information.
+A script to populate the MongoDB database with comic book data from CSV files. It includes functions for asynchronous insertion of data.
 
-[Go to Data Importer README](./data/README.md)
+### Templates
 
-## Data Source
+- **index.html:** The template for the main search page, including forms for keyword search and browsing by comic series.
 
-The comic book data used in this project is sourced from the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) available on Kaggle. This dataset provides comprehensive information about various DC comic books, including details about issues, creators, release dates, and more.
+- **results.html:** The template for displaying search results in a tabular format, including details of matching comic books.
 
-We are grateful to the creators of the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) for compiling and sharing this valuable collection of comic book information. The dataset forms the foundation of the comic book information available for search and exploration within the DC Comics Comic Book Search Web App.
+### Static
 
-Please visit the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) on Kaggle to learn more about the dataset, its structure, and the original contributors.
+This directory contains static files like CSS stylesheets (`styles.css`) for styling the web pages.
 
 ## Installation
 
-1. Clone this repository to your local machine:
+1. Fork this repository to your GitHub account and then clone it locally.
 
 ```bash
-git clone https://github.com/jaydestro/DCComics
+git clone https://github.com/yourusername/DCComics
+```
+2. Navigate to the project directory:
+
+```bash
+cd dccomics
 ```
 
-2. Install the required dependencies using pip:
+3. Install the required dependencies using pip:
 
 ```bash
-pip install Flask pymongo Flask-static
-```
-
-3. Navigate to the project directory:
-
-```bash
-cd DCComics
+pip install -r requirements.txt
 ```
 
 ## Configuration
@@ -83,6 +84,7 @@ Before running the Comic Book Search Web App, you need to configure the MongoDB 
 
 ```bash 
 MONGODB_URI = "mongodb://localhost:27017/" # Connection string for MongoDB server
+CSV_DIRECTORY = "./data"  # Path to the directory containing CSV files
 ```
 
 > **Note:** If you have a remote MongoDB server, replace the connection string in the code with the appropriate connection string for your server.
@@ -129,6 +131,28 @@ Remember to have a MongoDB server running and populated with comic book data for
 Please note that the web app relies on the comic book data stored in your MongoDB collection. Ensure that your MongoDB server is running and contains the necessary comic book documents before using the search functionality.
 
 Feel free to explore, modify, and use this web app as a starting point for your own projects. If you encounter any issues or have suggestions for improvements, please feel free to open an issue or pull request.
+
+## Data Importer CLI
+
+As an example, we've provided a data importer CLI tool (`data_import_cli.py`) in the `/data` directory. This tool demonstrates how to populate a MongoDB collection with comic book data from a CSV file. However, please note that this importer is just an example and is not required to run the main web application. The web app itself can work with an existing MongoDB collection, and you can manually insert data or use your preferred method for data population.
+
+The `data_import_cli.py` CLI tool showcases asynchronous programming techniques to efficiently import data from a CSV file into a MongoDB collection. It can be a helpful reference if you need to automate data import in a similar scenario.
+
+As part of this repository, we have included a CSV file named `Complete_DC_Comic_Books.csv` containing comic book information. If you wish to use the example importer, follow the instructions in the [Data Importer README](./data/README.md).
+
+> **Note:** Please remember that the data importer CLI tool is provided as an illustrative tool and is not necessary to run the main Comic Book Search Web App.
+
+Feel free to explore the data importer's README for detailed steps on how to run the CLI tool and import the provided `Complete_DC_Comic_Books.csv` data into a MongoDB collection.
+
+[Go to Data Importer README](./data/README.md)
+
+## Data Source
+
+The comic book data used in this project is sourced from the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) available on Kaggle. This dataset provides comprehensive information about various DC comic books, including details about issues, creators, release dates, and more.
+
+We are grateful to the creators of the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) for compiling and sharing this valuable collection of comic book information. The dataset forms the foundation of the comic book information available for search and exploration within the DC Comics Comic Book Search Web App.
+
+Please visit the [DC Comic Books Dataset](https://www.kaggle.com/datasets/deepcontractor/dc-comic-books-dataset) on Kaggle to learn more about the dataset, its structure, and the original contributors.
 
 ## License
 
