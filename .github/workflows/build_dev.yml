@@ -40,6 +40,3 @@ jobs:
           sleep 60  # Wait for the app to start
           curl -I http://127.0.0.1:5000/  # Make a request to test the app
           pkill -f app.py  # Stop the app
-    
-      - name: Stop MongoDB
-        run: docker stop mongodb
