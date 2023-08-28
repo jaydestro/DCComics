@@ -26,16 +26,10 @@ jobs:
     - name: Check Existing Resources
       id: check-resources
       run: |
-        # Use Azure CLI to query resources with the "development" tag
-        RESOURCE_COUNT=$(az resource list --resource-group dccomics --tag deployment=development --query "length([])")
+        # Use Azure CLI to query resources and filter by tag
+        RESOURCE_COUNT=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development']" --query "length([])")
         echo "::set-output name=RESOURCE_COUNT::$RESOURCE_COUNT"
         echo "Resource count: $RESOURCE_COUNT"
-
-        if [ $RESOURCE_COUNT -gt 0 ]; then
-          # Get the webAppName from the tagged Web App resource
-          WEBAPP_NAME=$(az resource list --resource-group dccomics --tag deployment=development --query "[?type=='Microsoft.Web/sites'].name | [0]" -o tsv)
-          echo "::set-output name=WEBAPP_NAME::$WEBAPP_NAME"
-        fi
 
   deploy-bicep-template:
     needs: check-existing-resources
