@@ -48,5 +48,5 @@ az role assignment create \
 gh secret set AZURE_CLIENT_ID -b "$aksDeploymentApplicationAppId"
 gh secret set AZURE_SUBSCRIPTION_ID -b "$SUBSCRIPTION_ID"
 gh secret set AZURE_TENANT_ID -b "$(az account show --query tenantId --output tsv)" 
-
+gh secret set RESOURCE_GROUP_NAME -b "dccomics"
 echo "Script completed."

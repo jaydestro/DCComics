@@ -1,0 +1,51 @@
+name: Deploy to Azure
+
+on:
+  push:
+    branches:
+      - development
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  check-existing-resources:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - uses: azure/login@v1
+      name: Set up Azure CLI
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Check Existing Resources
+      id: check-resources
+      run: |
+        # Use Azure CLI to query resources with the "development" tag
+        RESOURCE_COUNT=$(az resource list --tag deployment=development --query "length([])")
+        echo "::set-output name=RESOURCE_COUNT::$RESOURCE_COUNT"
+
+  deploy-bicep-template:
+    needs: check-existing-resources
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - uses: azure/login@v1
+      name: Set up Azure CLI
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Run Bicep Template Deployment
+      if: ${{ needs.check-existing-resources.outputs.RESOURCE_COUNT == '0' }}
+      run: |
+        az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+      
