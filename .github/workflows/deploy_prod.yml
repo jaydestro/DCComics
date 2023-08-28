@@ -32,6 +32,7 @@ jobs:
       id: create-rg
       run: |
         RG_NAME="dccomics${{ steps.random-number.outputs.random }}"
+        echo "::set-output name=RG_NAME::$RG_NAME"
         az group create --name $RG_NAME --location eastus --output json
 
     - name: Display Resource Group Name
