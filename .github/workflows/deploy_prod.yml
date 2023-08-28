@@ -24,14 +24,10 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Generate random number
-      id: random-number
-      run: echo "::set-output name=random::$(shuf -i 10000-99999 -n 1)"
-
     - name: Create Resource Group
       id: create-rg
       run: |
-        RG_NAME="dccomics${{ steps.random-number.outputs.random }}"
+        RG_NAME="dccomics"
         echo "::set-output name=RG_NAME::$RG_NAME"
         az group create --name $RG_NAME --location eastus --output json
 
