@@ -31,7 +31,7 @@ jobs:
         echo "::set-output name=RESOURCE_COUNT::$RESOURCE_COUNT"
         echo "Resource count: $RESOURCE_COUNT"
 
-  deploy-bicep-template:
+  deploy-resources:
     needs: check-existing-resources
     runs-on: ubuntu-latest
     if: ${{ needs.check-existing-resources.outputs.RESOURCE_COUNT == '0' }}
@@ -54,11 +54,6 @@ jobs:
         echo "Deploying Bicep template..."
         az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
-  set-cosmosdb-connection-string:
-    needs: deploy-bicep-template
-    runs-on: ubuntu-latest
-    if: ${{ needs.deploy-bicep-template.result == 'success' }}
-    steps:
     - name: Azure Login
       uses: azure/login@v1
       with:
@@ -72,16 +67,7 @@ jobs:
         COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name dccomics-db --query "connectionStrings[0].connectionString" -o tsv)
         echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
 
-  deploy-app-py:
-    needs: set-cosmosdb-connection-string
-    runs-on: ubuntu-latest
-    if: ${{ needs.deploy-bicep-template.result == 'success' }}
-    steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
-
     - name: Deploy app.py to Azure Web App
-      if: ${{ needs.check-existing-resources.outputs.RESOURCE_COUNT != '0' }}
       run: |
         # Deploy app.py to the tagged Web App
         az webapp deployment source config-zip -g dccomics -n ${{ needs.check-existing-resources.outputs.WEBAPP_NAME }} --src ./app.py
