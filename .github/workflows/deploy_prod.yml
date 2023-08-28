@@ -1,7 +1,10 @@
 name: Create Resource Group
 
-on: [push]
-
+on:
+  push:
+    branches:
+      - "development*"
+      
 jobs:
   create-resource-group:
     runs-on: ubuntu-latest
