@@ -1,31 +1,34 @@
-name: Create Resource Group
+name: Create Azure Resource Group
 
 on:
   push:
     branches:
-      - "development*"
+      - "development*"  # Adjust this to your repository's main branch name
 
 jobs:
   create-resource-group:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout Repository
+      uses: actions/checkout@v2
 
-      - name: Set up Azure CLI
-        uses: az-actions/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
+    - name: Set up Azure CLI
+      uses: azure/login@v1
+      with:
+        creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Create resource group
-        id: create_rg
-        run: |
-          RANDOM_STRING=$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 5 | head -n 1)
-          RESOURCE_GROUP_NAME="dccomics-$RANDOM_STRING"
-          az group create --name $RESOURCE_GROUP_NAME --location eastus
-          echo "::set-output name=resource_group::$RESOURCE_GROUP_NAME"
+    - name: Generate Random String
+      id: random-string
+      run: echo "::set-output name=randomString::$(openssl rand -hex 6)"
 
-      - name: Use resource group name
-        run: |
-          echo "Resource group name: ${{ steps.create_rg.outputs.resource_group }}"
+    - name: Create Resource Group
+      id: create-rg
+      run: |
+        rg_name="dccomics-${{ steps.random-string.outputs.randomString }}"
+        az group create --name $rg_name --location "East US" --output none
+        echo "::set-output name=resourceGroupName::$rg_name"
+
+    - name: Set Resource Group Name as Environment Variable
+      run: |
+        echo "RESOURCE_GROUP_NAME=${{ steps.create-rg.outputs.resourceGroupName }}" >> $GITHUB_ENV
