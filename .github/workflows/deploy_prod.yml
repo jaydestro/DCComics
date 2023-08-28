@@ -5,6 +5,10 @@ on:
     branches:
       - "development*"
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   create-resource-group:
     runs-on: ubuntu-latest
