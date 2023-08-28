@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - "development*"
-      
+
 jobs:
   create-resource-group:
     runs-on: ubuntu-latest
@@ -29,4 +29,5 @@ jobs:
         az group create --name $RG_NAME --location eastus --output json
 
     - name: Display Resource Group Name
-      run: echo "Created Resource Group: ${{ steps.create-rg.outputs.RG_NAME }}"
+      run: |  
+        echo "Created Resource Group: ${{ steps.create-rg.outputs.RG_NAME }}"
