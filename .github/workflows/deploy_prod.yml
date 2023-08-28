@@ -13,10 +13,12 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v2
 
-    - name: Set up Azure CLI
-      uses: azure/login@v1
+    - uses: azure/login@v1
+      name: Set up Azure CLI
       with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Generate random number
       id: random-number
@@ -29,5 +31,5 @@ jobs:
         az group create --name $RG_NAME --location eastus --output json
 
     - name: Display Resource Group Name
-      run: |  
+      run: |
         echo "Created Resource Group: ${{ steps.create-rg.outputs.RG_NAME }}"

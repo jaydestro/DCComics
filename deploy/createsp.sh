@@ -19,18 +19,34 @@ fi
 # Generate a random string
 RANDOM_STRING=$(openssl rand -hex 5)
 
-# Create Service Principal
-SP_NAME="DCComics$RANDOM_STRING"
-echo "Creating Service Principal: $SP_NAME"
-SP_JSON=$(az ad sp create-for-rbac --name "$SP_NAME" --role contributor --scopes /subscriptions/$SUBSCRIPTION_ID --sdk-auth)
-CLIENT_ID=$(echo "$SP_JSON" | jq -r .clientId)
-CLIENT_SECRET=$(echo "$SP_JSON" | jq -r .clientSecret)
-TENANT_ID=$(echo "$SP_JSON" | jq -r .tenantId)
+# Set federated identity
+
+githubOrgAndRepo=$(gh repo view --json nameWithOwner -q ".nameWithOwner")
+branchName='development'
+applicationName="dccomics-$RANDOM_STRING"
+
+# Create an Azure AD application
+aksDeploymentApplicationDetails=$(az ad app create --display-name $applicationName)
+aksDeploymentApplicationObjectId=$(echo $aksDeploymentApplicationDetails | jq -r '.id')
+aksDeploymentApplicationAppId=$(echo $aksDeploymentApplicationDetails | jq -r '.appId')
+
+# Create a federated identity credential for the application
+az ad app federated-credential create \
+   --id $aksDeploymentApplicationObjectId \
+   --parameters "{\"name\":\"${applicationName}\",\"issuer\":\"https://token.actions.githubusercontent.com\",\"subject\":\"repo:${githubOrgAndRepo}:ref:refs/heads/${branchName}\",\"audiences\":[\"api://AzureADTokenExchange\"]}"
+
+# Create a service principal for the application
+az ad sp create --id $aksDeploymentApplicationObjectId
+
+# Assign the application permissions to the subscription to deploy the Bicep template
+az role assignment create \
+   --assignee $aksDeploymentApplicationAppId \
+   --role Owner \
+   --scope "/subscriptions/${SUBSCRIPTION_ID}"
 
 # Store Secrets in GitHub Repository
-gh secret set AZURE_CLIENT_ID -b "$CLIENT_ID"
-gh secret set AZURE_CLIENT_SECRET -b "$CLIENT_SECRET"
-gh secret set AZURE_TENANT_ID -b "$TENANT_ID"
-echo "Secrets stored in GitHub repository."
+gh secret set AZURE_CLIENT_ID -b "$aksDeploymentApplicationAppId"
+gh secret set AZURE_SUBSCRIPTION_ID -b "$SUBSCRIPTION_ID"
+gh secret set AZURE_TENANT_ID -b "$(az account show --query tenantId --output tsv)" 
 
 echo "Script completed."
