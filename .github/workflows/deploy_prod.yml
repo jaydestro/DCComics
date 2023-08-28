@@ -1,0 +1,31 @@
+name: Create Resource Group
+
+on:
+  push:
+    branches:
+      - "development*"
+
+jobs:
+  create-resource-group:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Azure CLI
+        uses: az-actions/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Create resource group
+        id: create_rg
+        run: |
+          RANDOM_STRING=$(LC_ALL=C tr -dc 'a-zA-Z0-9' < /dev/urandom | fold -w 5 | head -n 1)
+          RESOURCE_GROUP_NAME="dccomics-$RANDOM_STRING"
+          az group create --name $RESOURCE_GROUP_NAME --location eastus
+          echo "::set-output name=resource_group::$RESOURCE_GROUP_NAME"
+
+      - name: Use resource group name
+        run: |
+          echo "Resource group name: ${{ steps.create_rg.outputs.resource_group }}"
