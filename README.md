@@ -30,6 +30,7 @@ The DC Comics Comic Book Search Web App is designed to help users search for com
 - Python 3.x
 - Flask
 - pymongo
+- A MongoDB server
 
 ## Components
 
@@ -82,7 +83,7 @@ Before running the Comic Book Search Web App, you need to configure the MongoDB 
 
 2. Update the MongoDB connection details to match your MongoDB setup. Modify the following line with your MongoDB URI:
 
-```bash 
+```bash
 MONGODB_URI = "mongodb://localhost:27017/" # Connection string for MongoDB server
 CSV_DIRECTORY = "./data"  # Path to the directory containing CSV files
 ```

@@ -34,5 +34,11 @@ jobs:
         run: |
           python ./app.py &
           sleep 60  # Wait for the app to start
-          curl -I http://127.0.0.1:5000/  # Make a request to test the app
+          response_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/)
+          if [ "$response_code" = "200" ]; then
+            echo "App responded with 200 OK"
+          else
+            echo "App did not respond with 200 OK"
+            exit 1  # Fail the workflow
+          fi
           pkill -f app.py  # Stop the app
