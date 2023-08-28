@@ -10,10 +10,8 @@ permissions:
   contents: read
 
 jobs:
-  check-existing-resources:
+  delete-existing-resources:
     runs-on: ubuntu-latest
-    outputs:
-      web-app-name: ${{ steps.get-web-app-name.outputs.web-app-name }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -25,25 +23,23 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Get Web App Name
-      id: get-web-app-name
+    - name: Get Resource IDs to Delete
+      id: get-resources-to-delete
       run: |
-        # Get the name of the tagged Web App
-        WEB_APP_NAME=$(az resource list --resource-group dccomics --tag deployment=development --query "[?type=='Microsoft.Web/sites'].name | [0]" -o tsv)
-        echo "::set-output name=web-app-name::$WEB_APP_NAME"
+        # Get the IDs of resources tagged with "deployment=development"
+        RESOURCE_IDS=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].id" -o tsv)
+        echo "::set-output name=RESOURCE_IDS::$RESOURCE_IDS"
 
-    - name: Check Existing Resources
-      id: check-resources
+    - name: Delete Resources
       run: |
-        # Use Azure CLI to query resources and filter by tag
-        RESOURCE_COUNT=$(az resource list --resource-group dccomics --tag deployment=development --query "length([])")
-        echo "::set-output name=RESOURCE_COUNT::$RESOURCE_COUNT"
-        echo "Resource count: $RESOURCE_COUNT"
+        # Loop through the list of resource IDs and delete them
+        for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
+          az resource delete --ids "$id" --yes --no-wait
+        done
 
   deploy-bicep-template:
-    needs: check-existing-resources
+    needs: delete-existing-resources
     runs-on: ubuntu-latest
-    if: ${{ needs.check-existing-resources.outputs.RESOURCE_COUNT == '0' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -58,12 +54,37 @@ jobs:
     - name: Run Bicep Template Deployment
       run: |
         echo "Deploying Bicep template..."
-        az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus webAppName=${{ needs.check-existing-resources.outputs.web-app-name }}
+        az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
-  set-cosmosdb-connection-string:
+  get-web-app-name:
     needs: deploy-bicep-template
     runs-on: ubuntu-latest
-    if: ${{ needs.deploy-bicep-template.result == 'success' }}
+    steps:
+    - name: Azure Login
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+    - name: Get Web App Name
+      id: get-web-app-name
+      run: |
+        # Get all Web App resources in the resource group
+        WEB_APP_LIST=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/sites --query "[?type=='Microsoft.Web/sites'].name" -o tsv)
+
+        # Loop through the list of Web Apps and find the one with the specified tag
+        while IFS= read -r webapp; do
+          TAGS=$(az resource show --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dccomics/providers/Microsoft.Web/sites/$webapp" --query 'tags' -o json)
+          if [[ $(echo $TAGS | jq -r '.deployment') == 'development' ]]; then
+            echo "::set-output name=web-app-name::$webapp"
+            break
+          fi
+        done <<< "$WEB_APP_LIST"
+
+  get-cosmosdb-connection-string:
+    needs: deploy-bicep-template
+    runs-on: ubuntu-latest
     steps:
     - name: Azure Login
       uses: azure/login@v1
@@ -73,15 +94,18 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
     - name: Get Cosmos DB Connection String
+      id: get-cosmosdb-connection-string
       run: |
+        # Get the name of the Cosmos DB database tagged with "deployment=development"
+        COSMOS_DB_NAME=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].name | [0]" -o tsv)
+
         # Get Cosmos DB connection string
-        COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name dccomics-db --query "connectionStrings[0].connectionString" -o tsv)
+        COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_NAME --query "connectionStrings[0].connectionString" -o tsv)
         echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
 
   deploy-app-py:
-    needs: set-cosmosdb-connection-string
+    needs: get-cosmosdb-connection-string
     runs-on: ubuntu-latest
-    if: ${{ needs.deploy-bicep-template.result == 'success' }}
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -90,9 +114,9 @@ jobs:
       run: |
         # Deploy app.py to the Azure Web App
         # The web app name is inherited from the Bicep deployment output
-        az webapp deployment source config-zip -g dccomics -n ${{ needs.check-existing-resources.outputs.web-app-name }} --src ./app.py
+        az webapp deployment source config-zip -g dccomics -n ${{ needs.get-web-app-name.outputs.web-app-name }} --src ./app.py
 
     - name: Set Cosmos DB Connection String as Environment Variable
       run: |
         # Set the Cosmos DB connection string as a Web App environment variable
-        az webapp config appsettings set -g dccomics -n ${{ needs.check-existing-resources.outputs.web-app-name }} --settings "COSMOSDB_CONNECTION_STRING=${{ needs.set-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
+        az webapp config appsettings set -g dccomics -n ${{ needs.get-web-app-name.outputs.web-app-name }} --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
