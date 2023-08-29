@@ -30,7 +30,7 @@ jobs:
           RESOURCE_IDS=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].id" -o tsv)
           echo "::set-output name=RESOURCE_IDS::$RESOURCE_IDS"
 
-      - name: Delete Web Apps
+      - name: Delete Resources
         if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
         run: |
           # Loop through the list of resource IDs and delete Web Apps
@@ -38,9 +38,9 @@ jobs:
             az webapp delete --verbose --ids "$id"
           done
 
-      - name: Delete Resources
-        if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
-        run: |
+          # Wait for a brief period before deleting remaining resources
+          sleep 10
+
           # Loop through the list of resource IDs and delete remaining resources
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
             az resource delete --verbose --ids "$id" --no-wait -g dccomics
@@ -98,7 +98,7 @@ jobs:
 
       - name: Deploy app.py to Azure Web App
         env:
-          WEB_APP_NAME: ${{ needs.deploy-bicep-template.outputs['appServiceName'] }}
+          WEB_APP_NAME: ${{ needs.deploy-bicep-template.outputs.appServiceName }}
         run: |
           # Deploy app.py to the Azure Web App
           az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
@@ -106,4 +106,4 @@ jobs:
       - name: Set Cosmos DB Connection String as Environment Variable
         run: |
           # Set the Cosmos DB connection string as a Web App environment variable
-          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
+          az webapp config appsettings set -g dccomics -n ${{ needs.deploy-bicep-template.outputs.appServiceName }} --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
