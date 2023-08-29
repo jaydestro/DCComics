@@ -1,16 +1,11 @@
 param baseName string = 'dccomics'
 param location string = 'eastus'
 
-param random string = uniqueString('abcd', utcNow())
-
-param appName string = '${baseName}-${random}'
-param appServicePlanName string = '${baseName}-plan-${random}'
-param cosmosDbAccountName string = '${baseName}-db-${random}'
-param cosmosDbDatabaseName string = 'DCComics'
-param cosmosDbCollectionName string = 'Comics'
+// Use a random string generator function
+var random = uniqueString(baseName, 'abcd')
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
-  name: appServicePlanName
+  name: 'appServicePlan-${random}'
   location: location
   sku: {
     name: 'F1'
@@ -22,7 +17,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
 }
 
 resource webApp 'Microsoft.Web/sites@2020-06-01' = {
-  name: appName
+  name: 'webApp-${random}'
   location: location
   properties: {
     serverFarmId: appServicePlan.id
@@ -32,8 +27,9 @@ resource webApp 'Microsoft.Web/sites@2020-06-01' = {
   }
 }
 
+// Use a valid Cosmos DB account name
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
-  name: cosmosDbAccountName
+  name: 'cosmosdb-${random}'
   location: location
   kind: 'MongoDB'
   properties: {
@@ -46,30 +42,25 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
 
 resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-04-15' = {
   parent: cosmosDbAccount
-  name: cosmosDbDatabaseName
+  name: 'DCComics'
   properties: {
     resource: {
-      id: cosmosDbDatabaseName
+      id: 'DCComics'
     }
-  }
-  tags: {
-    deployment: 'development'
   }
 }
 
 resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2021-04-15' = {
   parent: cosmosDbDatabase
-  name: cosmosDbCollectionName
+  name: 'Comics'
   properties: {
     resource: {
-      id: cosmosDbCollectionName
+      id: 'Comics'
     }
-  }
-  tags: {
-    deployment: 'development'
   }
 }
 
-output appServicePlanId string = appServicePlan.id
+output appServicePlanName string = appServicePlan.name
 output appServiceName string = webApp.name
-output cosmosDbConnectionString string = listKeys(cosmosDbAccount.id, '2021-04-15').primaryConnectionString
+output cosmosDbAccountName string = cosmosDbAccount.name
+output cosmosDbConnectionString string = listKeys(cosmosDbAccount.id, '2022-11-15').primaryMasterKey

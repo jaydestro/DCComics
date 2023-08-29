@@ -3,17 +3,17 @@ name: Deploy to Azure
 on:
   push:
     branches:
-      - "development*" # Push events to development branch trigger the workflow
+      - "development"
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  delete-previous-resources:
+  delete-existing-resources:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - uses: azure/login@v1
@@ -22,42 +22,52 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: List Microsoft.Web resources with deployment tag
-        id: list-web-resources
+      
+      - name: List Web App IDs
+        id: list-web-app-ids
         run: |
-          RESOURCE_GROUP="dccomics"
-          WEB_RESOURCES=$(az resource list --resource-group $RESOURCE_GROUP --resource-type Microsoft.Web/sites --query "[?tags.deployment=='development'].id" -o tsv)
-          echo "::set-output name=web-resources::$WEB_RESOURCES"
-
-      - name: Delete Microsoft.Web resources with deployment tag
+          WEB_APP_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/sites --query "[?tags.deployment=='development'].id" -o tsv)
+          echo "::set-output name=web-app-ids::$WEB_APP_IDS"
+          
+      - name: List Web App Plan IDs
+        id: list-web-app-plan-ids
         run: |
-          RESOURCE_GROUP="dccomics"
-          WEB_RESOURCES="${{ steps.list-web-resources.outputs.web-resources }}"
-          for res in $WEB_RESOURCES; do
-            az resource delete --ids "$res" --no-wait
+          WEB_APP_PLAN_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/serverfarms --query "[?tags.deployment=='development'].id" -o tsv)
+          echo "::set-output name=web-app-plan-ids::$WEB_APP_PLAN_IDS"
+      
+      - name: List Cosmos DB IDs
+        id: list-cosmos-db-ids
+        run: |
+          COSMOS_DB_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].id" -o tsv)
+          echo "::set-output name=cosmos-db-ids::$COSMOS_DB_IDS"
+          
+      # Add more steps for listing other types of resources
+      
+      - name: Delete Web Apps
+        run: |
+          for id in ${{ steps.list-web-app-ids.outputs.web-app-ids }}; do
+            az resource delete --ids "$id" --no-wait
           done
-
-      - name: List other tagged resources with deployment
-        id: list-other-resources
+      
+      - name: Delete Web App Plans
         run: |
-          RESOURCE_GROUP="dccomics"
-          OTHER_RESOURCES=$(az resource list --resource-group $RESOURCE_GROUP --query "[?tags.deployment=='development' && type!='Microsoft.Web/sites'].id" -o tsv)
-          echo "::set-output name=other-resources::$OTHER_RESOURCES"
-
-      - name: Delete other tagged resources with deployment
-        run: |
-          RESOURCE_GROUP="dccomics"
-          OTHER_RESOURCES="${{ steps.list-other-resources.outputs.other-resources }}"
-          for res in $OTHER_RESOURCES; do
-            az resource delete --ids "$res" --no-wait
+          for id in ${{ steps.list-web-app-plan-ids.outputs.web-app-plan-ids }}; do
+            az resource delete --ids "$id" --no-wait
           done
-
+      
+      - name: Delete Cosmos DB Accounts
+        run: |
+          for id in ${{ steps.list-cosmos-db-ids.outputs.cosmos-db-ids }}; do
+            az resource delete --ids "$id" --no-wait
+          done
+      
+      # Add more steps for deleting other types of resources
+      
   deploy-bicep-and-app:
-    needs: delete-previous-resources
+    needs: delete-existing-resources
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
+      - name: Checkout repository
         uses: actions/checkout@v2
 
       - uses: azure/login@v1
@@ -66,32 +76,26 @@ jobs:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Set deployment name
-        id: set-deployment-name
-        run: |
-          DEPLOYMENT_NAME="dev-$(date +'%Y%m%d%H%M%S')"
-          echo "::set-output name=deployment-name::$DEPLOYMENT_NAME"
 
       - name: Deploy Bicep Template
+        run: |
+          echo "Deploying Bicep template..."
+          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+
+      # Add more steps as needed for deploying the app and setting environment variables
+      
+      - name: Get Bicep Outputs
         id: deploy-bicep-template
         run: |
-          DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
-          az deployment group create --resource-group dccomics --name $DEPLOYMENT_NAME --template-file ./deploy/dev.bicep --parameters location=eastus
-
-      - name: Get Output from Bicep Template
-        id: get-bicep-output
+          APP_SERVICE_NAME=$(az deployment group show --resource-group dccomics --name dev --query "properties.outputs.appServiceName.value" -o tsv)
+          APP_SERVICE_PLAN_NAME=$(az deployment group show --resource-group dccomics --name dev --query "properties.outputs.appServicePlanName.value" -o tsv)
+          COSMOS_DB_ACCOUNT_NAME=$(az deployment group show --resource-group dccomics --name dev --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
+          echo "::set-output name=appServiceName::$APP_SERVICE_NAME"
+          echo "::set-output name=appServicePlanName::$APP_SERVICE_PLAN_NAME"
+          echo "::set-output name=cosmosDbAccountName::$COSMOS_DB_ACCOUNT_NAME"
+      
+      - name: Print Outputs
         run: |
-          DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
-          APP_SERVICE_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.appServiceName.value" -o tsv)
-          APP_SERVICE_PLAN_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.appServicePlanName.value" -o tsv)
-          COSMOS_DB_ACCOUNT_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
-          echo "::set-output name=app-service-name::$APP_SERVICE_NAME"
-          echo "::set-output name=app-service-plan-name::$APP_SERVICE_PLAN_NAME"
-          echo "::set-output name=cosmos-db-account-name::$COSMOS_DB_ACCOUNT_NAME"
-
-      - name: Echo Output
-        run: |
-          echo "App Service Name: ${{ steps.get-bicep-output.outputs.app-service-name }}"
-          echo "App Service Plan Name: ${{ steps.get-bicep-output.outputs.app-service-plan-name }}"
-          echo "Cosmos DB Account Name: ${{ steps.get-bicep-output.outputs.cosmos-db-account-name }}"
+          echo "App Service Name: ${{ steps.deploy-bicep-template.outputs.appServiceName }}"
+          echo "App Service Plan Name: ${{ steps.deploy-bicep-template.outputs.appServicePlanName }}"
+          echo "Cosmos DB Account Name: ${{ steps.deploy-bicep-template.outputs.cosmosDbAccountName }}"
