@@ -40,7 +40,7 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
     databaseAccountOfferType: 'Standard'
   }
   tags: {
-    deployment: 'production'
+    deployment: 'development'
   }
 }
 
@@ -53,7 +53,7 @@ resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabase
     }
   }
   tags: {
-    deployment: 'production'
+    deployment: 'development'
   }
 }
 
@@ -66,7 +66,7 @@ resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDataba
     }
   }
   tags: {
-    deployment: 'production'
+    deployment: 'development'
   }
 }
 
