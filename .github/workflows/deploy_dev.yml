@@ -30,17 +30,23 @@ jobs:
           RESOURCE_IDS=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].id" -o tsv)
           echo "::set-output name=RESOURCE_IDS::$RESOURCE_IDS"
 
-      - name: Delete Resources
+      - name: Delete Web Apps
         if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
         run: |
           # Loop through the list of resource IDs and delete Web Apps
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
-            az webapp delete --verbose --ids "$id"
+            az webapp delete --verbose --ids "$id" --yes
           done
 
+      - name: Wait for Deletion
+        if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
+        run: |
           # Wait for a brief period before deleting remaining resources
           sleep 10
 
+      - name: Delete Resources
+        if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
+        run: |
           # Loop through the list of resource IDs and delete remaining resources
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
             az resource delete --verbose --ids "$id" --no-wait -g dccomics
@@ -87,7 +93,7 @@ jobs:
 
           # Get Cosmos DB connection string
           COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_NAME --query "connectionStrings[0].connectionString" -o tsv)
-          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
+          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING}"
 
   deploy-app-py:
     needs: [deploy-bicep-template, get-cosmosdb-connection-string]
@@ -102,8 +108,3 @@ jobs:
         run: |
           # Deploy app.py to the Azure Web App
           az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
-
-      - name: Set Cosmos DB Connection String as Environment Variable
-        run: |
-          # Set the Cosmos DB connection string as a Web App environment variable
-          az webapp config appsettings set -g dccomics -n ${{ needs.deploy-bicep-template.outputs.appServiceName }} --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
