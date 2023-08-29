@@ -69,8 +69,8 @@ jobs:
       - name: Get Web App Name
         id: get-web-app-name
         run: |
-          WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template }} --query "properties.outputs.appServiceName.value" -o tsv)
-          echo "::set-output name=web-app-name::$WEB_APP_NAME"
+         WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template.name }} --query "properties.outputs.appServiceName.value" -o tsv)
+         echo "::set-output name=web-app-name::$WEB_APP_NAME"
 
       # Step 9: Get Cosmos DB Connection String
       - name: Get Cosmos DB Connection String
