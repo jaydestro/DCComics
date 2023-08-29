@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# This script creates an Azure AD application, federated identity credential, and service principal for deploying a Bicep template to an Azure subscription. It also sets the necessary secrets in the GitHub repository for authentication. 
+
 # Get the subscription ID using Azure CLI
 SUBSCRIPTION_ID=$(az account show --query 'id' --output tsv)
 echo "Subscription ID retrieved: $SUBSCRIPTION_ID"

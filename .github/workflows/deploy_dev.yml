@@ -120,12 +120,13 @@ jobs:
         uses: actions/checkout@v2
 
       - name: Deploy app.py to Azure Web App
+        env:
+          WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
         run: |
           # Deploy app.py to the Azure Web App
-          # The web app name is inherited from the Bicep deployment output
-          az webapp deployment source config-zip -g dccomics -n ${{ needs.get-web-app-name.outputs.web-app-name }} --src ./app.py
+          az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
 
       - name: Set Cosmos DB Connection String as Environment Variable
         run: |
           # Set the Cosmos DB connection string as a Web App environment variable
-          az webapp config appsettings set -g dccomics -n ${{ needs.get-web-app-name.outputs.web-app-name }} --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
+          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
