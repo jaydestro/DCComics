@@ -3,7 +3,7 @@ name: Deploy to Azure
 on:
   push:
     branches:
-      - development
+      - "development*" # Push events to development branch trigger the workflow
 
 permissions:
   id-token: write
@@ -34,7 +34,7 @@ jobs:
       run: |
         # Loop through the list of resource IDs and delete them
         for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
-          az resource delete --ids "$id" --yes --no-wait
+          az resource delete --ids "$id" --no-wait
         done
 
   deploy-bicep-template:
