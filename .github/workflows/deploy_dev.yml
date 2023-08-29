@@ -32,7 +32,7 @@ jobs:
           DEPLOYMENTS=$(az deployment group list -g $RESOURCE_GROUP --query "[].name" -o tsv)
           echo "::set-output name=deployments::$DEPLOYMENTS"
 
-      - name: Wait for previous deployment to complete
+      - name: Wait for previous deployments to complete
         run: |
           RESOURCE_GROUP="dccomics"
           DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
@@ -46,7 +46,7 @@ jobs:
           RESOURCE_GROUP="dccomics"
           DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
           for dep in $DEPLOYMENTS; do
-            az deployment group delete -g $RESOURCE_GROUP -n $dep --no-wait
+            az deployment group delete -g $RESOURCE_GROUP -n $dep --yes
           done
 
           echo "::set-output name=deployment-started::true"
