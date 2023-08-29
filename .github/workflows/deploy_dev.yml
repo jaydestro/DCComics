@@ -12,6 +12,8 @@ permissions:
 jobs:
   delete-previous-deployments:
     runs-on: ubuntu-latest
+    outputs:
+      deployment-started: ${{ steps.delete-deployments.outputs.deployment-started }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v2
@@ -44,8 +46,10 @@ jobs:
           RESOURCE_GROUP="dccomics"
           DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
           for dep in $DEPLOYMENTS; do
-            az deployment group delete -g $RESOURCE_GROUP -n $dep --no-wait
+            az deployment group delete -g $RESOURCE_GROUP -n $dep --yes
           done
+
+          echo "::set-output name=deployment-started::true"
 
   deploy-bicep-and-app:
     needs: delete-previous-deployments
@@ -83,8 +87,8 @@ jobs:
         id: get-cosmosdb-connection-string
         run: |
           DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
-          COSMOS_DB_SERVER_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
-          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_SERVER_NAME --query "connectionStrings[0].connectionString" -o tsv)
+          COSMOS_DB_ACCOUNT_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
+          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_ACCOUNT_NAME --query "connectionStrings[0].connectionString" -o tsv)
           echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
 
       - name: Deploy app.py to Azure Web App
