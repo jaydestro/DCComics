@@ -59,6 +59,20 @@ jobs:
           echo "Deploying Bicep template..."
           az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
+  get-web-app-name:
+    needs: deploy-bicep-template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Get Web App Name
         id: get-web-app-name
         run: |
@@ -74,6 +88,20 @@ jobs:
             fi
           done <<< "$WEB_APP_LIST"
 
+  get-cosmosdb-connection-string:
+    needs: deploy-bicep-template
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Get Cosmos DB Connection String
         id: get-cosmosdb-connection-string
         run: |
@@ -85,7 +113,7 @@ jobs:
           echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
 
   deploy-app-py:
-    needs: get-cosmosdb-connection-string
+    needs: [get-web-app-name, get-cosmosdb-connection-string]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
