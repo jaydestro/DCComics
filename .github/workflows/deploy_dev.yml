@@ -69,15 +69,15 @@ jobs:
       - name: Get Web App Name
         id: get-web-app-name
         run: |
-         WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template.name }} --query "properties.outputs.appServiceName.value" -o tsv)
-         echo "::set-output name=web-app-name::$WEB_APP_NAME"
+          WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template.name }} --query "properties.outputs.appServiceName.value" -o tsv)
+          echo "::set-output name=web-app-name::$WEB_APP_NAME"
 
       # Step 9: Get Cosmos DB Connection String
       - name: Get Cosmos DB Connection String
         id: get-cosmosdb-connection-string
         run: |
           # Get the name of the Cosmos DB server from the Bicep template output
-          COSMOS_DB_SERVER_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template }} --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
+          COSMOS_DB_SERVER_NAME=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template.name }} --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
           # Get Cosmos DB connection string
           COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_SERVER_NAME --query "connectionStrings[0].connectionString" -o tsv)
           echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
