@@ -35,14 +35,20 @@ jobs:
         run: |
           # Loop through the list of resource IDs and delete Web Apps
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
-            az webapp delete --verbose --ids "$id"
+            az webapp delete --verbose --ids "$id" --yes
           done
 
-      - name: Wait for Deletion
+      - name: Wait for Web App Deletion
         if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
         run: |
-          # Wait for a brief period before deleting remaining resources
-          sleep 10
+          # Loop to check if web apps have been deleted successfully
+          for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
+            while az resource show --ids "$id" &>/dev/null; do
+              echo "Waiting for web app deletion..."
+              sleep 10
+            done
+            echo "Web app with ID $id has been deleted."
+          done
 
       - name: Delete Resources
         if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
@@ -108,3 +114,8 @@ jobs:
         run: |
           # Deploy app.py to the Azure Web App
           az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
+
+      - name: Set Cosmos DB Connection String as Environment Variable
+        run: |
+          # Set the Cosmos DB connection string as a Web App environment variable
+          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings "COSMOSDB_CONNECTION_STRING"
