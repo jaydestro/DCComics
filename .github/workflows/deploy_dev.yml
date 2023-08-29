@@ -69,6 +69,7 @@ jobs:
       - name: Get Web App Name
         id: get-web-app-name
         run: |
+          DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
           WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.appServiceName.value" -o tsv)
           echo "::set-output name=web-app-name::$WEB_APP_NAME"
 
