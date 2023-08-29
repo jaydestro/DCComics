@@ -88,9 +88,9 @@ jobs:
         run: |
           DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
           COSMOS_DB_ACCOUNT_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
-          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_ACCOUNT_NAME --query "connectionStrings[0].connectionString" -o tsv)
-          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
-
+          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name "$COSMOS_DB_ACCOUNT_NAME" --query "connectionStrings[0].connectionString" -o tsv)
+            echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
+      
       - name: Deploy app.py to Azure Web App
         env:
           WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
