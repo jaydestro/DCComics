@@ -10,14 +10,12 @@ permissions:
   contents: read
 
 jobs:
-  delete-existing-resources:
+  delete-previous-deployments:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repository
-      - name: Checkout repository
+      - name: Check out repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Azure CLI
       - uses: azure/login@v1
         name: Set up Azure CLI
         with:
@@ -25,52 +23,31 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 3: Delete Web Apps
-      - name: Delete Web Apps
+      - name: List deployments
+        id: list-deployments
         run: |
-          # Get the IDs of Web Apps tagged with "deployment=development"
-          WEB_APP_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/sites --query "[?tags.deployment=='development'].id" -o tsv)
-          
-          # Loop through the list of Web App IDs and delete Web Apps
-          for id in $WEB_APP_IDS; do
-            az resource delete --ids "$id" --no-wait
+          RESOURCE_GROUP="dccomics"
+          DEPLOYMENTS=$(az deployment group list -g $RESOURCE_GROUP --query "[].name" -o tsv)
+          echo "::set-output name=deployments::$DEPLOYMENTS"
+
+      - name: Delete previous deployments
+        id: delete-deployments
+        run: |
+          RESOURCE_GROUP="dccomics"
+          DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
+          for dep in $DEPLOYMENTS; do
+            az deployment group delete -g $RESOURCE_GROUP -n $dep --yes
           done
 
-      # Step 4: Delete Web App Plans
-      - name: Delete Web App Plans
-        run: |
-          # Get the IDs of Web App Plans tagged with "deployment=development"
-          WEB_APP_PLAN_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/serverfarms --query "[?tags.deployment=='development'].id" -o tsv)
-          
-          # Loop through the list of Web App Plan IDs and delete Web App Plans
-          for id in $WEB_APP_PLAN_IDS; do
-            az resource delete --ids "$id" --no-wait
-          done
-
-      # Step 5: Delete Cosmos DB Accounts (without waiting for deletion)
-      - name: Delete Cosmos DB Accounts
-        run: |
-          # Get the IDs of Cosmos DB Accounts tagged with "deployment=development"
-          COSMOS_DB_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].id" -o tsv)
-          
-          # Loop through the list of Cosmos DB Account IDs and delete Cosmos DB Accounts without waiting
-          for id in $COSMOS_DB_IDS; do
-            # Check the status of the Cosmos DB before deleting
-            DB_STATUS=$(az cosmosdb show --ids "$id" --query "properties.provisioningState" -o tsv)
-            if [ "$DB_STATUS" != "Deleting" ]; then
-              az resource delete --ids "$id" --no-wait &
-            fi
-          done
+          echo "::set-output name=deployment-started::true"
 
   deploy-bicep-and-app:
-    needs: delete-existing-resources
+    needs: delete-previous-deployments
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Azure CLI
       - uses: azure/login@v1
         name: Set up Azure CLI
         with:
@@ -78,28 +55,36 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 3: Deploy Bicep Template
+      - name: Set up deployment name
+        id: set-deployment-name
+        run: |
+          echo "##[set-output name=deployment-name;]dev-$(date +'%Y%m%d%H%M%S')"
+
       - name: Deploy Bicep Template
         run: |
           echo "Deploying Bicep template..."
-          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+          DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
+          az deployment group create --resource-group dccomics --name $DEPLOYMENT_NAME --template-file ./deploy/dev.bicep --parameters location=eastus --no-wait
 
-      # Step 4: Get Web App Name from Bicep Template Output
       - name: Get Web App Name
+        id: get-web-app-name
         run: |
-          # Add your logic to get the Web App Name here
+          WEB_APP_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.appServiceName.value" -o tsv)
+          echo "::set-output name=web-app-name::$WEB_APP_NAME"
 
-      # Step 5: Get Cosmos DB Connection String
       - name: Get Cosmos DB Connection String
+        id: get-cosmosdb-connection-string
         run: |
-          # Add your logic to get the Cosmos DB Connection String here
+          COSMOS_DB_SERVER_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
+          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_SERVER_NAME --query "connectionStrings[0].connectionString" -o tsv)
+          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
 
-      # Step 6: Deploy app.py to Azure Web App
       - name: Deploy app.py to Azure Web App
+        env:
+          WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
         run: |
-          # Add your logic to deploy app.py to the Azure Web App here
+          az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
 
-      # Step 7: Set Cosmos DB Connection String as Environment Variable
       - name: Set Cosmos DB Connection String as Environment Variable
         run: |
-          # Add your logic to set the Cosmos DB Connection String as an environment variable here
+          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings "COSMOSDB_CONNECTION_STRING=${{ needs.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
