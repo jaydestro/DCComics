@@ -36,7 +36,7 @@ jobs:
           RESOURCE_GROUP="dccomics"
           DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
           for dep in $DEPLOYMENTS; do
-            az deployment group delete -g $RESOURCE_GROUP -n $dep --yes
+            az deployment group delete -g $RESOURCE_GROUP -n $dep --no-wait
           done
 
           echo "::set-output name=deployment-started::true"
