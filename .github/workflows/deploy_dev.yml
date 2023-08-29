@@ -35,7 +35,7 @@ jobs:
         run: |
           # Loop through the list of resource IDs and delete Web Apps
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
-            az webapp delete --verbose --ids "$id" --yes
+            az webapp delete --verbose --ids "$id"
           done
 
       - name: Wait for Web App Deletion
