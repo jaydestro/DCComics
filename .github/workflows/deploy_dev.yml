@@ -23,13 +23,15 @@ jobs:
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-    - name: Get Resource IDs to Delete
+    - name: Get Resource IDs and Names to Delete
       id: get-resources-to-delete
       run: |
-        # Get the IDs of resources tagged with "deployment=development"
+        # Get the IDs and names of resources tagged with "deployment=development"
         RESOURCE_IDS=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].id" -o tsv)
+        RESOURCE_NAMES=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].name" -o tsv)
         echo "::set-output name=RESOURCE_IDS::$RESOURCE_IDS"
-
+        echo "::set-output name=RESOURCE_NAMES::$RESOURCE_NAMES"
+  
     - name: Delete Resources
       run: |
         # Loop through the list of resource IDs and delete them
