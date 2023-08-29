@@ -33,6 +33,7 @@ jobs:
         echo "::set-output name=RESOURCE_NAMES::$RESOURCE_NAMES"
   
     - name: Delete Resources
+      if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
       run: |
         # Loop through the list of resource IDs and delete them
         for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
@@ -41,6 +42,98 @@ jobs:
 
   deploy-bicep-template:
     needs: delete-existing-resources
+    jobs:
+      delete-existing-resources:
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+
+        - uses: azure/login@v1
+          name: Set up Azure CLI
+          with:
+            client-id: ${{ secrets.AZURE_CLIENT_ID }}
+            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+        - name: Get Resource IDs and Names to Delete
+          id: get-resources-to-delete
+          run: |
+            # Get the IDs and names of resources tagged with "deployment=development"
+            RESOURCE_IDS=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].id" -o tsv)
+            RESOURCE_NAMES=$(az resource list --resource-group dccomics --query "[?tags.deployment=='development'].name" -o tsv)
+            echo "::set-output name=RESOURCE_IDS::$RESOURCE_IDS"
+            echo "::set-output name=RESOURCE_NAMES::$RESOURCE_NAMES"
+      
+        - name: Delete Resources
+          if: steps.get-resources-to-delete.outputs.RESOURCE_IDS != ''
+          run: |
+            # Loop through the list of resource IDs and delete them
+            for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
+              az resource delete --ids "$id" --no-wait
+            done
+
+      deploy-bicep-template:
+        needs: delete-existing-resources
+        runs-on: ubuntu-latest
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v2
+
+        - uses: azure/login@v1
+          name: Set up Azure CLI
+          with:
+            client-id: ${{ secrets.AZURE_CLIENT_ID }}
+            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+        - name: Run Bicep Template Deployment
+          run: |
+            echo "Deploying Bicep template..."
+            az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+
+      get-web-app-name:
+        needs: deploy-bicep-template
+        runs-on: ubuntu-latest
+        steps:
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+            client-id: ${{ secrets.AZURE_CLIENT_ID }}
+            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+        - name: Get Web App Name
+          id: get-web-app-name
+          run: |
+            # Get all Web App resources in the resource group
+            WEB_APP_LIST=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/sites --query "[?type=='Microsoft.Web/sites'].name" -o tsv)
+
+            # Loop through the list of Web Apps and find the one with the specified tag
+            while IFS= read -r webapp; do
+              TAGS=$(az resource show --ids "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/dccomics/providers/Microsoft.Web/sites/$webapp" --query 'tags' -o json)
+              if [[ $(echo $TAGS | jq -r '.deployment') == 'development' ]]; then
+                echo "::set-output name=web-app-name::$webapp"
+                break
+              fi
+            done <<< "$WEB_APP_LIST"
+
+      get-cosmosdb-connection-string:
+        needs: deploy-bicep-template
+        runs-on: ubuntu-latest
+        steps:
+        - name: Azure Login
+          uses: azure/login@v1
+          with:
+            client-id: ${{ secrets.AZURE_CLIENT_ID }}
+            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+        - name: Get Cosmos DB Connection String
+          run: |
+            # Get the Cosmos DB connection string
+            COSMOSDB_CONNECTION_STRING=$(az cosmosdb list-connection-strings --name dccomics-cosmosdb --resource-group dccomics --query 'connectionStrings[0].connectionString' -o tsv)
+            echo "::set-output name=cosmosdb-connection-string::$COSMOSDB_CONNECTION_STRING"
     runs-on: ubuntu-latest
     steps:
     - name: Checkout repository
