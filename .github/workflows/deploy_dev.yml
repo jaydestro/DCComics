@@ -30,6 +30,14 @@ jobs:
           DEPLOYMENTS=$(az deployment group list -g $RESOURCE_GROUP --query "[].name" -o tsv)
           echo "::set-output name=deployments::$DEPLOYMENTS"
 
+      - name: Wait for previous deployment to complete
+        run: |
+          RESOURCE_GROUP="dccomics"
+          DEPLOYMENTS="${{ steps.list-deployments.outputs.deployments }}"
+          for dep in $DEPLOYMENTS; do
+            az deployment group wait --resource-group $RESOURCE_GROUP --name $dep --updated --custom "provisioningState!='Running'" --interval 30 --timeout 1800
+          done
+
       - name: Delete previous deployments
         id: delete-deployments
         run: |
@@ -38,8 +46,6 @@ jobs:
           for dep in $DEPLOYMENTS; do
             az deployment group delete -g $RESOURCE_GROUP -n $dep --no-wait
           done
-
-          echo "::set-output name=deployment-started::true"
 
   deploy-bicep-and-app:
     needs: delete-previous-deployments
@@ -76,6 +82,7 @@ jobs:
       - name: Get Cosmos DB Connection String
         id: get-cosmosdb-connection-string
         run: |
+          DEPLOYMENT_NAME=$(echo "${{ steps.set-deployment-name.outputs.deployment-name }}")
           COSMOS_DB_SERVER_NAME=$(az deployment group show --resource-group dccomics --name $DEPLOYMENT_NAME --query "properties.outputs.cosmosDbAccountName.value" -o tsv)
           COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list --resource-group dccomics --name $COSMOS_DB_SERVER_NAME --query "connectionStrings[0].connectionString" -o tsv)
           echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
