@@ -62,9 +62,6 @@ jobs:
             fi
           done
 
-        # Ensure the step doesn't wait for background processes to finish
-        background: true
-
   deploy-bicep-and-app:
     needs: delete-existing-resources
     runs-on: ubuntu-latest
