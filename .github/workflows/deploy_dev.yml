@@ -37,7 +37,7 @@ jobs:
         run: |
           # Loop through the list of resource IDs and delete them
           for id in ${{ steps.get-resources-to-delete.outputs.RESOURCE_IDS }}; do
-            az resource delete --verbose --ids "$id" --no-wait
+            az resource delete --verbose --ids "$id" --no-wait -g dccomics
           done
 
   deploy-bicep-template:
