@@ -1,6 +1,5 @@
 param baseName string = 'dccomics'
 param location string = 'eastus'
-
 var random = uniqueString(baseName, 'abcd')
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
@@ -19,7 +18,7 @@ resource webApp 'Microsoft.Web/sites@2020-06-01' = {
   name: 'webApp-${random}'
   location: location
   properties: {
-    serverFarmId: appServicePlan.id
+    serverFarmId: appServicePlan
   }
   tags: {
     deployment: 'development'
@@ -41,21 +40,11 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
 resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-04-15' = {
   parent: cosmosDbAccount
   name: 'DCComics'
-  properties: {
-    resource: {
-      id: 'DCComics'
-    }
-  }
 }
 
 resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2021-04-15' = {
   parent: cosmosDbDatabase
   name: 'Comics'
-  properties: {
-    resource: {
-      id: 'Comics'
-    }
-  }
 }
 
 output appServicePlanName string = appServicePlan.name
