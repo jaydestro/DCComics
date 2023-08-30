@@ -63,4 +63,3 @@ resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDataba
 output appServicePlanName string = appServicePlan.name
 output appServiceName string = webApp.name
 output cosmosDbAccountName string = cosmosDbAccount.name
-output cosmosDbConnectionString string = listKeys(cosmosDbAccount.id, '2022-11-15').primaryMasterKey
