@@ -1,10 +1,16 @@
 param baseName string = 'dccomics'
 param location string = 'eastus'
 
-var uniqueNameComponent = uniqueString(resourceGroup().id)
+param random string = uniqueString('abcd', utcNow())
+
+param appName string = '${baseName}-${random}'
+param appServicePlanName string = '${baseName}-plan-${random}'
+param cosmosDbAccountName string = '${baseName}-db-${random}'
+param cosmosDbDatabaseName string = 'DCComics'
+param cosmosDbCollectionName string = 'Comics'
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
-  name: 'appServicePlan-${uniqueNameComponent}'
+  name: appServicePlanName
   location: location
   sku: {
     name: 'F1'
@@ -16,7 +22,7 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
 }
 
 resource webApp 'Microsoft.Web/sites@2020-06-01' = {
-  name: 'webApp-${uniqueNameComponent}'
+  name: appName
   location: location
   properties: {
     serverFarmId: appServicePlan.id
@@ -27,7 +33,7 @@ resource webApp 'Microsoft.Web/sites@2020-06-01' = {
 }
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
-  name: 'cosmosdb-${uniqueNameComponent}'
+  name: cosmosDbAccountName
   location: location
   kind: 'MongoDB'
   properties: {
@@ -38,6 +44,31 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   }
 }
 
-output appServicePlanName string = appServicePlan.name
+resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-04-15' = {
+  parent: cosmosDbAccount
+  name: cosmosDbDatabaseName
+  properties: {
+    resource: {
+      id: cosmosDbDatabaseName
+    }
+  }
+  tags: {
+    deployment: 'development'
+  }
+}
+
+resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2021-04-15' = {
+  parent: cosmosDbDatabase
+  name: cosmosDbCollectionName
+  properties: {
+    resource: {
+      id: cosmosDbCollectionName
+    }
+  }
+  tags: {
+    deployment: 'development'
+  }
+}
+
+output appServicePlanId string = appServicePlan.id
 output appServiceName string = webApp.name
-output cosmosDbAccountName string = cosmosDbAccount.name
