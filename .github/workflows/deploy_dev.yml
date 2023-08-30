@@ -41,16 +41,11 @@ jobs:
         run: |
           COSMOS_DB_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].id" -o tsv)
           for id in $COSMOS_DB_IDS; do
-            STATUS=$(az resource show --ids "$id" --query "properties.provisioningState" -o tsv)
-            if [ "$STATUS" != "Deleting" ]; then
-              az resource delete --ids "$id" --no-wait
-            else
-              echo "Cosmos DB Account with ID $id is in status 'Deleting', skipping..."
-            fi
+            az resource delete --ids "$id" --no-wait
+            echo "Initiated deletion for Cosmos DB Account with ID $id."
           done
 
   deploy-bicep-and-app:
-    needs: delete-existing-resources
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -70,8 +65,8 @@ jobs:
           az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
   deploy-app:
-    needs: deploy-bicep-and-app
     runs-on: ubuntu-latest
+    needs: deploy-bicep-and-app
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
