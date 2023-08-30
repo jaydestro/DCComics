@@ -1,9 +1,10 @@
 param baseName string = 'dccomics'
 param location string = 'eastus'
-var random = uniqueString(baseName, 'abcd')
+
+var uniqueNameComponent = uniqueString(resourceGroup().id)
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
-  name: 'appServicePlan-${random}'
+  name: 'appServicePlan-${uniqueNameComponent}'
   location: location
   sku: {
     name: 'F1'
@@ -15,10 +16,10 @@ resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
 }
 
 resource webApp 'Microsoft.Web/sites@2020-06-01' = {
-  name: 'webApp-${random}'
+  name: 'webApp-${uniqueNameComponent}'
   location: location
   properties: {
-    serverFarmId: appServicePlan
+    serverFarmId: appServicePlan.id
   }
   tags: {
     deployment: 'development'
@@ -26,7 +27,7 @@ resource webApp 'Microsoft.Web/sites@2020-06-01' = {
 }
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
-  name: 'cosmosdb-${random}'
+  name: 'cosmosdb-${uniqueNameComponent}'
   location: location
   kind: 'MongoDB'
   properties: {
