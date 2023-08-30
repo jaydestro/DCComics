@@ -83,19 +83,12 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Get Latest Deployment Name
-        id: get-latest-deployment-name
+      - name: Get Latest Web App Name
+        id: get-latest-web-app-name
         run: |
-          DEPLOYMENT_NAME=$(az deployment group list -g dccomics --query "[0].name" -o tsv)
-          echo "::set-output name=deployment-name::$DEPLOYMENT_NAME"
-
-      - name: Get Web App Name
-        id: get-web-app-name
-        run: |
-          DEPLOYMENT_NAME=${{ needs.get-latest-deployment-name.outputs.deployment-name }}
-          WEB_APP_NAME=$(az deployment group show -g dccomics -n $DEPLOYMENT_NAME --query "properties.outputs.appServiceName.value" -o tsv)
+          WEB_APP_NAME=$(az webapp list --resource-group dccomics --query "[0].name" -o tsv)
           echo "::set-output name=web-app-name::$WEB_APP_NAME"
-
+        
       - name: Configure Web App Ports
         env:
           WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
