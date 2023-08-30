@@ -85,11 +85,21 @@ jobs:
           echo "::set-output name=web-app-name::$WEB_APP_NAME"
 
       # Step 5: Get Cosmos DB Connection String
-      - name: Get Cosmos DB Connection String
-        id: get-cosmosdb-connection-string
+      - name: Get Cosmos DB ID
+        id: get-cosmosdb-id
         run: |
-          COSMOSDB_CONNECTION_STRING=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template }} --query "properties.outputs.cosmosDbConnectionString.value" -o tsv)
-          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
+          COSMOSDB_ID=$(az deployment group show --resource-group dccomics --name ${{ steps.deploy-bicep-template.outputs.deploy-bicep-template }} --query "properties.outputs.cosmosDbAccount.id" -o tsv)
+          echo "::set-output name=cosmosdb-id::$COSMOSDB_ID"
+
+      - name: Wait for Cosmos DB Database
+        id: wait-for-cosmosdb
+        run: |
+          STATUS=""
+          while [ "$STATUS" != "Online" ]; do
+            STATUS=$(az resource show --ids "${{ steps.get-cosmosdb-id.outputs.cosmosdb-id }}" --query "properties.provisioningState" -o tsv)
+            echo "Waiting for Cosmos DB Database to be Online..."
+            sleep 10
+          done
 
       # Step 6: Configure Web App Ports
       - name: Configure Web App Ports
@@ -100,6 +110,7 @@ jobs:
 
       # Step 7: Set Cosmos DB Connection String as Environment Variable
       - name: Set Cosmos DB Connection String
+        if: steps.wait-for-cosmosdb.outputs.STATUS == 'Online'
         env:
           WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
           COSMOSDB_CONNECTION_STRING: ${{ steps.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}
