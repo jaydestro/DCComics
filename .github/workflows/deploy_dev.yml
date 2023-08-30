@@ -41,8 +41,13 @@ jobs:
         run: |
           COSMOS_DB_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].id" -o tsv)
           for id in $COSMOS_DB_IDS; do
-            az resource delete --ids "$id" --no-wait
-            echo "Initiated deletion for Cosmos DB Account with ID $id."
+            STATUS=$(az resource show --ids "$id" --query "properties.provisioningState" -o tsv)
+            if [ "$STATUS" != "Deleting" ]; then
+              az resource delete --ids "$id" --no-wait
+              echo "Initiated deletion for Cosmos DB Account with ID $id."
+            else
+              echo "Cosmos DB Account with ID $id is already in status 'Deleting', skipping..."
+            fi
           done
 
   deploy-bicep-and-app:

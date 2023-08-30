@@ -1,7 +1,6 @@
 param baseName string = 'dccomics'
 param location string = 'eastus'
 
-// Use a random string generator function
 var random = uniqueString(baseName, 'abcd')
 
 resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
@@ -27,7 +26,6 @@ resource webApp 'Microsoft.Web/sites@2020-06-01' = {
   }
 }
 
-// Use a valid Cosmos DB account name
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   name: 'cosmosdb-${random}'
   location: location
