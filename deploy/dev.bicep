@@ -38,16 +38,6 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   }
 }
 
-resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-04-15' = {
-  parent: cosmosDbAccount
-  name: 'DCComics'
-}
-
-resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2021-04-15' = {
-  parent: cosmosDbDatabase
-  name: 'Comics'
-}
-
 output appServicePlanName string = appServicePlan.name
 output appServiceName string = webApp.name
 output cosmosDbAccountName string = cosmosDbAccount.name

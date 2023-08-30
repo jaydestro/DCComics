@@ -69,7 +69,7 @@ jobs:
           echo "Deploying Bicep template..."
           deployment_name="development-$(openssl rand -hex 6)"
           echo "Deploying Bicep template with deployment name: $deployment_name"
-          az deployment group create --name $deployment_name --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+          az deployment group create --name $deployment_name --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus --verbose
 
   deploy-app:
     runs-on: ubuntu-latest
