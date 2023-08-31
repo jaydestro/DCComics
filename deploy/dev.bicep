@@ -1,74 +1,52 @@
-param baseName string = 'dccomics'
-param location string = 'eastus'
+param location string = resourceGroup().location
+param appServicePlanTier string = 'D1'
+param appServicePlanInstances int = 1
 
-param random string = uniqueString('abcd', utcNow())
-
-param appName string = '${baseName}-${random}'
-param appServicePlanName string = '${baseName}-plan-${random}'
-param cosmosDbAccountName string = '${baseName}-db-${random}'
-param cosmosDbDatabaseName string = 'DCComics'
-param cosmosDbCollectionName string = 'Comics'
-
-resource appServicePlan 'Microsoft.Web/serverfarms@2020-06-01' = {
-  name: appServicePlanName
-  location: location
-  sku: {
-    name: 'F1'
-    capacity: 1
-  }
-  tags: {
-    deployment: 'development'
-  }
-}
-
-resource webApp 'Microsoft.Web/sites@2020-06-01' = {
-  name: appName
-  location: location
-  properties: {
-    serverFarmId: appServicePlan.id
-  }
-  tags: {
-    deployment: 'development'
-  }
-}
+var resourcePrefix = 'dccomics'
+var resourceSuffix = 'dev'
+var cosmosDbAccountName = '${resourcePrefix}-mongodb-${resourceSuffix}'
+var websiteName = '${resourcePrefix}-web-${resourceSuffix}'
+var hostingPlanName = '${resourcePrefix}-hosting-${resourceSuffix}'
 
 resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   name: cosmosDbAccountName
-  location: location
   kind: 'MongoDB'
+  location: location
+  tags: {
+    deployment: 'development'
+  }
   properties: {
     databaseAccountOfferType: 'Standard'
   }
+}
+
+resource hostingPlan 'Microsoft.Web/serverfarms@2020-06-01' = {
+  name: hostingPlanName
+  location: location
   tags: {
     deployment: 'development'
   }
+  sku: {
+    name: appServicePlanTier
+    capacity: appServicePlanInstances
+  }
 }
 
-resource cosmosDbDatabase 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases@2021-04-15' = {
-  parent: cosmosDbAccount
-  name: cosmosDbDatabaseName
+resource website 'Microsoft.Web/sites@2020-06-01' = {
+  name: websiteName
+  location: location
+  tags: {
+    deployment: 'development'
+  }
   properties: {
-    resource: {
-      id: cosmosDbDatabaseName
+    serverFarmId: hostingPlan.id
+    siteConfig: {
+      appSettings: [
+        {
+          name: 'MONGODB_URI'
+          value: cosmosDbAccount.properties.documentEndpoint
+        }
+      ]
     }
   }
-  tags: {
-    deployment: 'development'
-  }
 }
-
-resource cosmosDbCollection 'Microsoft.DocumentDB/databaseAccounts/mongodbDatabases/collections@2021-04-15' = {
-  parent: cosmosDbDatabase
-  name: cosmosDbCollectionName
-  properties: {
-    resource: {
-      id: cosmosDbCollectionName
-    }
-  }
-  tags: {
-    deployment: 'development'
-  }
-}
-
-output appServicePlanId string = appServicePlan.id
-output appServiceName string = webApp.name

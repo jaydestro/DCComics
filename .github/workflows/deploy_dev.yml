@@ -1,128 +1,37 @@
-name: Deploy to Azure
+name: Azure Deployment
 
 on:
   push:
     branches:
-      - "development"
-
-permissions:
-  id-token: write
-  contents: read
+      - development
 
 jobs:
-  delete-existing-resources:
+  deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v2
 
-      - uses: azure/login@v1
-        name: Set up Azure CLI
+      - name: Set up Azure CLI
+        uses: azure/login@v1
         with:
           client-id: ${{ secrets.AZURE_CLIENT_ID }}
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: List and Delete Web Apps
+      - name: Install Python Dependencies
         run: |
-          WEB_APP_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/sites --query "[?tags.deployment=='development'].id" -o tsv)
-          for id in $WEB_APP_IDS; do
-            az resource delete --ids "$id" --no-wait
-          done
-
-      - name: List and Delete Web App Plans
-        run: |
-          WEB_APP_PLAN_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.Web/serverfarms --query "[?tags.deployment=='development'].id" -o tsv)
-          for id in $WEB_APP_PLAN_IDS; do
-            az resource delete --ids "$id" --no-wait 
-          done
-
-      - name: List and Delete Cosmos DB Accounts
-        run: |
-          COSMOS_DB_IDS=$(az resource list --resource-group dccomics --resource-type Microsoft.DocumentDB/databaseAccounts --query "[?tags.deployment=='development'].id" -o tsv)
-          for id in $COSMOS_DB_IDS; do
-            STATUS=$(az resource show --ids "$id" --query "properties.provisioningState" -o tsv)
-            if [ "$STATUS" != "Deleting" ]; then
-              az resource delete --ids "$id" --no-wait
-              echo "Initiated deletion for Cosmos DB Account with ID $id."
-            else
-              echo "Cosmos DB Account with ID $id is already in status 'Deleting', skipping..."
-            fi
-          done
-
-  deploy-bicep-and-app:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - uses: azure/login@v1
-        name: Set up Azure CLI
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          pip install -r requirements.txt
 
       - name: Deploy Bicep Template
-        id: deploy-bicep-template
         run: |
-          echo "Deploying Bicep template..."
-          deployment_name="development-$(openssl rand -hex 6)"
-          echo "Deploying Bicep template with deployment name: $deployment_name"
-          az deployment group create --name $deployment_name --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus --verbose
+          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --verbose
 
-  deploy-app:
-    runs-on: ubuntu-latest
-    needs: deploy-bicep-and-app
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-
-      - uses: azure/login@v1
-        name: Set up Azure CLI
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      - name: Get Latest Web App Name
-        id: get-latest-web-app-name
+      - name: Zip Flask App
         run: |
-          WEB_APP_NAME=$(az webapp list --resource-group dccomics --query "[0].name" -o tsv)
-          echo "::set-output name=web-app-name::$WEB_APP_NAME"
-        
-      - name: Configure Web App Ports
-        env:
-          WEB_APP_NAME: ${{ steps.get-latest-web-app-name.outputs.web-app-name }}
-        run: |
-          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings WEBSITES_PORT=5000
+          zip -r app.zip app.py
 
-      - name: Wait for Cosmos DB to Be Online
+      - name: Deploy Flask App using Zip Deploy
         run: |
-          az cosmosdb show -g dccomics -n $COSMOS_DB_ACCOUNT_NAME --query "properties.provisioningState" -o tsv
-        id: wait-for-cosmosdb-online
-        continue-on-error: true
-
-      - name: Get Cosmos DB Connection String
-        id: get-cosmosdb-connection-string
-        run: |
-          COSMOSDB_CONNECTION_STRING=$(az cosmosdb keys list -g dccomics -n $COSMOS_DB_ACCOUNT_NAME --type connection-strings --query "connectionStrings[0].connectionString" -o tsv)
-          echo "::set-output name=COSMOSDB_CONNECTION_STRING::$COSMOSDB_CONNECTION_STRING"
-
-      - name: Set Cosmos DB Connection String
-        env:
-          WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
-          COSMOSDB_CONNECTION_STRING: ${{ steps.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}
-        run: |
-          az webapp config appsettings set -g dccomics -n $WEB_APP_NAME --settings MONGODB_URI="$COSMOSDB_CONNECTION_STRING"
-
-      - name: Deploy app.py to Azure Web App
-        env:
-          WEB_APP_NAME: ${{ needs.get-web-app-name.outputs.web-app-name }}
-        run: |
-          az webapp deployment source config-zip -g dccomics -n $WEB_APP_NAME --src ./app.py
-
-      - name: Print Resources Information
-        run: |
-          echo "Web App Name: ${{ needs.get-web-app-name.outputs.web-app-name }}"
-          echo "Cosmos DB Connection String: ${{ steps.get-cosmosdb-connection-string.outputs.COSMOSDB_CONNECTION_STRING }}"
+          az webapp deployment source config-zip --name dccomics-web-dev --resource-group dccomics --src app.zip
