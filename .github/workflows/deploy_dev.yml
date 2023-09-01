@@ -13,11 +13,9 @@ jobs:
   deploy-bicep-and-app:
     runs-on: ubuntu-latest
     steps:
-      # Step 1: Checkout repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      # Step 2: Set up Azure CLI
       - uses: azure/login@v1
         name: Set up Azure CLI
         with:
@@ -25,14 +23,12 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      # Step 3: Deploy Bicep Template
       - name: Deploy Bicep Template
         id: deploy-bicep-template
         run: |
           echo "Deploying Bicep template..."
           az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
-      # Step 4: Retrieve Cosmos DB connection string
       - name: Get Cosmos DB connection string
         id: get-cosmosdb-connection-string
         run: |
@@ -40,7 +36,11 @@ jobs:
           echo "Cosmos DB connection string: $cosmos_db_connection_string"
           echo "::set-output name=connection_string::$cosmos_db_connection_string"
 
-      # Step 5: Deploy Python Web App
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
       - name: Deploy Python Web App
         uses: azure/webapps-deploy@v2
         with:
