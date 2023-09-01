@@ -14,8 +14,28 @@ permissions:
   contents: read
 
 jobs:
+  deploy-bicep:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Azure CLI
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy Bicep Template
+        id: deploy-bicep-template
+        run: |
+          echo "Deploying Bicep template..."
+          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
+
   build:
     runs-on: ubuntu-latest
+    needs: deploy-bicep  # Wait for the Bicep deployment to complete
 
     steps:
       - uses: actions/checkout@v2
@@ -53,6 +73,7 @@ jobs:
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
+    needs: build  # Wait for the Python application build to complete
 
     steps:
       - name: Set up Azure CLI
@@ -74,18 +95,16 @@ jobs:
     needs: [build, retrieve-mongodb-uri]
 
     steps:
-      - name: Azure Login
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
       - name: Download artifact from build job
         uses: actions/download-artifact@v2
         with:
           name: python-app
           path: .
+
+      - name: Install Python Dependencies
+        run: |
+          cd python-app
+          pip install -r requirements.txt
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -93,7 +112,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .  # Deploy the current directory
+          package: .
           platform: python
           version: ${{ env.PYTHON_VERSION }}
           slot-name: production
