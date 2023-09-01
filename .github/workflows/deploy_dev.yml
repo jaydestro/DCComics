@@ -53,8 +53,3 @@ jobs:
           startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 app:app'
         env:
           MONGODB_URI: ${{ steps.get-cosmosdb-connection-string.outputs.connection_string }}
-
-      # Step 6: Enable HTTPS
-      - name: Enable HTTPS
-        run: |
-          az webapp config set --resource-group dccomics --name dccomics-web-dev --https-only true
