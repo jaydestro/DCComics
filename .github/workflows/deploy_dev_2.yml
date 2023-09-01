@@ -29,10 +29,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Check if resources tagged with "deployment=development" exist
+      - name: Check if resources tagged with "development" exist
         run: |
           # Use the Azure CLI to list resources with the specified tag
-          tagExists=$(az resource list --tag "development" --query "[?tagName=='deployment'].length(@)" --output tsv)
+          tagExists=$(az resource list --tag "development" --query "[?tagName=='development'].length(@)" --output tsv)
           
           if [[ $tagExists -gt 0 ]]; then
             echo "Resources tagged with 'deployment=development' exist. Skipping Bicep deployment."
