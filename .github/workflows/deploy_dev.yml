@@ -9,6 +9,10 @@ on:
     branches:
       - development  # Change to the appropriate branch
 
+permissions:
+  id-token: write
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -68,9 +72,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [build, retrieve-mongodb-uri]
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
       - name: Download artifact from build job
@@ -90,5 +91,3 @@ jobs:
           version: ${{ env.PYTHON_VERSION }}
           slot-name: production
           startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'
-        env:
-          MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
