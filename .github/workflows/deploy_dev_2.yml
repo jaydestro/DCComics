@@ -32,7 +32,7 @@ jobs:
       - name: Check if resources tagged with "deployment=development" exist
         run: |
           # Use the Azure CLI to list resources with the specified tag
-          tagExists=$(az resource list --tag "deployment=development" --query "[?tagName=='deployment'].length(@)" --output tsv)
+          tagExists=$(az resource list --tag "development" --query "[?tagName=='deployment'].length(@)" --output tsv)
           
           if [[ $tagExists -gt 0 ]]; then
             echo "Resources tagged with 'deployment=development' exist. Skipping Bicep deployment."
