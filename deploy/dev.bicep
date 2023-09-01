@@ -53,12 +53,7 @@ resource website 'Microsoft.Web/sites@2022-03-01' = {
     serverFarmId: hostingPlan.id
     siteConfig: {
       linuxFxVersion: linuxFxVersion
-      appSettings: [
-        {
-          name: 'MONGODB_URI'
-          value: cosmosDbAccount.properties.documentEndpoint
-        }
-      ]
-    }
+   }
   }
 }
+

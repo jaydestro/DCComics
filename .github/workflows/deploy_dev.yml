@@ -1,4 +1,3 @@
-
 name: Deploy to Azure
 
 on:
@@ -33,6 +32,15 @@ jobs:
           echo "Deploying Bicep template..."
           az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
+      # Step 4: Retrieve Cosmos DB connection string
+      - name: Get Cosmos DB connection string
+        id: get-cosmosdb-connection-string
+        run: |
+          cosmos_db_connection_string=$(az cosmosdb keys list --name <cosmos-db-name> --resource-group dccomics --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
+          echo "Cosmos DB connection string: $cosmos_db_connection_string"
+          echo "::set-output name=connection_string::$cosmos_db_connection_string"
+
+      # Step 5: Deploy Python Web App
       - name: Deploy Python Web App
         uses: azure/webapps-deploy@v2
         with:
@@ -43,7 +51,10 @@ jobs:
           version: '3.9'
           port: 5000
           startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 app:app'
+        env:
+          MONGODB_URI: ${{ steps.get-cosmosdb-connection-string.outputs.connection_string }}
 
+      # Step 6: Enable HTTPS
       - name: Enable HTTPS
         run: |
-            az webapp config set --resource-group my-resource-group --name dccomics-web-dev --https-only true
+          az webapp config set --resource-group dccomics --name dccomics-web-dev --https-only true
