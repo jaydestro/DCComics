@@ -124,6 +124,6 @@ jobs:
           with:
             app-name: 'dccomics-web-dev'
             slot-name: 'production'
-            startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'
+            startup-command: 'python ./app.py'
           env:
             MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
