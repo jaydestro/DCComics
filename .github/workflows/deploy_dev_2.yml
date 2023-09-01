@@ -1,18 +1,19 @@
 name: Build and deploy Python app to Azure Web App - dccomics-web-dev
 
-MONGODB_SERVER_NAME: dccomics-mongodb-dev   # Replace with your Azure Cosmos DB name
-AZURE_WEBAPP_NAME: dccomics-web-dev  # Replace with your Azure Web App name
+env:
+  MONGODB_SERVER_NAME: dccomics-mongodb-dev   # Replace with your Azure Cosmos DB name
+  AZURE_WEBAPP_NAME: dccomics-web-dev  # Replace with your Azure Web App name
 
 on:
   push:
     branches:
       - development
+  workflow_dispatch:
 
 permissions:
   id-token: write
   contents: read
-  workflow_dispatch:
-
+  
 jobs:
   deploy-bicep:
     runs-on: ubuntu-latest
@@ -78,7 +79,6 @@ jobs:
       url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
-      steps:
         - name: Set up Azure CLI
           uses: azure/login@v1
           with:
@@ -88,16 +88,16 @@ jobs:
 
         - name: Download artifact from build job
           uses: actions/download-artifact@v2
-         with:
-          name: python-app
-          path: .
+          with:
+           name: python-app
+           path: .
           
         - name: 'Deploy to Azure Web App'
           uses: azure/webapps-deploy@v2
           id: deploy-to-webapp
           with:
-          app-name: 'dccomics-web-dev'
-          slot-name: 'production'
-          publish-profile: ${{ secrets.AzureAppService_PublishProfile_e576a1f6c2aa4997b2a777665a8eac12 }}
+           app-name: 'dccomics-web-dev'
+           slot-name: 'production'
+           publish-profile: ${{ secrets.AzureAppService_PublishProfile_e576a1f6c2aa4997b2a777665a8eac12 }}
           env:
            MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
