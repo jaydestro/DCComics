@@ -3,11 +3,12 @@ name: Build and deploy Python app to Azure Web App
 env:
   AZURE_WEBAPP_NAME: dccomics-web-dev  # Replace with your Azure Web App name
   PYTHON_VERSION: '3.9'               # Set your desired Python version
+  MONGODB_SERVER_NAME: dccomics-mongodb-dev   # Replace with your Azure Cosmos DB name
 
 on:
   push:
     branches:
-      - development  # Change to the appropriate branch
+      - none  # Change to the appropriate branch
 
 permissions:
   id-token: write
@@ -91,7 +92,7 @@ jobs:
       - name: Get Cosmos DB connection string
         id: get-cosmosdb-connection-string
         run: |
-          cosmos_db_connection_string=$(az cosmosdb keys list --name dccomics-mongodb-dev --resource-group dccomics --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
+          cosmos_db_connection_string=$(az cosmosdb keys list --name ${{ secrets.MONGODB_SERVER_NAME }} --resource-group dccomics --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
           echo "Cosmos DB connection string: $cosmos_db_connection_string"
           echo "::set-output name=mongodb_uri::$cosmos_db_connection_string"
 
