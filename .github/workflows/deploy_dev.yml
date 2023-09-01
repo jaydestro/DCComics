@@ -29,7 +29,7 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-      
+
       - name: Set up dependency caching for faster installs
         uses: actions/cache@v2
         with:
@@ -50,7 +50,7 @@ jobs:
           path: |
             .
             !venv/
-            
+
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
 
@@ -74,6 +74,13 @@ jobs:
     needs: [build, retrieve-mongodb-uri]
 
     steps:
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
       - name: Download artifact from build job
         uses: actions/download-artifact@v2
         with:
@@ -91,3 +98,5 @@ jobs:
           version: ${{ env.PYTHON_VERSION }}
           slot-name: production
           startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'
+        env:
+          MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
