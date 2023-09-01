@@ -59,7 +59,12 @@ jobs:
             ${{ runner.os }}-pip-
 
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: |
+          if [ -d "python-app" ]; then
+            pip install -r python-app/requirements.txt
+          else
+            pip install -r requirements.txt
+          fi
 
       # Optional: Add a step to run tests here (PyTest, Django test suites, etc.)
 
@@ -67,7 +72,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: python-app
-          path: .
+          path: |
+            .
+            !venv/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
@@ -101,7 +108,11 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          pip install -r python-app/requirements.txt
+          if [ -d "python-app" ]; then
+            pip install -r python-app/requirements.txt
+          else
+            pip install -r requirements.txt
+          fi
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
