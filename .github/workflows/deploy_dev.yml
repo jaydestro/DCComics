@@ -49,7 +49,7 @@ jobs:
           package: .
           platform: python
           version: '3.9'
-          port: 5000
-          startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 app:app'
+          port: 8000
+          startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'
         env:
           MONGODB_URI: ${{ steps.get-cosmosdb-connection-string.outputs.connection_string }}
