@@ -1,6 +1,8 @@
 param location string = resourceGroup().location
-param appServicePlanTier string = 'D1'
+param appServicePlanTier string = 'S1'
 param appServicePlanInstances int = 1
+param linuxFxVersion string = 'python|3.9'
+
 
 var resourcePrefix = 'dccomics'
 var resourceSuffix = 'dev'
@@ -28,6 +30,10 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
 resource hostingPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: hostingPlanName
   location: location
+  kind: 'Linux'
+  properties: {
+    reserved: true
+  }
   tags: {
     deployment: 'development'
   }
@@ -35,7 +41,6 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
     name: appServicePlanTier
     capacity: appServicePlanInstances
   }
-  kind: 'Linux'
 }
 
 resource website 'Microsoft.Web/sites@2022-03-01' = {
@@ -47,6 +52,7 @@ resource website 'Microsoft.Web/sites@2022-03-01' = {
   properties: {
     serverFarmId: hostingPlan.id
     siteConfig: {
+      linuxFxVersion: linuxFxVersion
       appSettings: [
         {
           name: 'MONGODB_URI'
