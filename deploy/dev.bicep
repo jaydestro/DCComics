@@ -25,10 +25,9 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   }
 }
 
-resource hostingPlan 'Microsoft.Web/serverfarms@2020-06-01' = {
+resource hostingPlan 'Microsoft.Web/serverfarms@2022-03-01' = {
   name: hostingPlanName
   location: location
-  kind: 'linux'
   tags: {
     deployment: 'development'
   }
@@ -36,9 +35,10 @@ resource hostingPlan 'Microsoft.Web/serverfarms@2020-06-01' = {
     name: appServicePlanTier
     capacity: appServicePlanInstances
   }
+  kind: 'Linux'
 }
 
-resource website 'Microsoft.Web/sites@2020-06-01' = {
+resource website 'Microsoft.Web/sites@2022-03-01' = {
   name: websiteName
   location: location
   tags: {
