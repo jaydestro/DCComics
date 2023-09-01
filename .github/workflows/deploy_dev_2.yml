@@ -86,9 +86,6 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     needs: [build, deploy-bicep, retrieve-mongodb-uri]
-    environment:
-      name: 'production'
-      url: ${{ steps.deploy-to-webapp.outputs.webapp-url }}
 
     steps:
         - name: Set up Azure CLI
