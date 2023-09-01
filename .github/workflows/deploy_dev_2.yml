@@ -3,6 +3,7 @@ name: Build and deploy Python app to Azure Web App - dccomics-web-dev
 env:
   MONGODB_SERVER_NAME: dccomics-mongodb-dev   # Replace with your Azure Cosmos DB name
   AZURE_WEBAPP_NAME: dccomics-web-dev  # Replace with your Azure Web App name
+  RESOURCE_GROUP: dccomics  # Replace with your Azure Resource Group name
 
 on:
   push:
@@ -99,7 +100,17 @@ jobs:
           uses: actions/download-artifact@v2
           with:
            name: python-app
-           path: .
+           path: |
+            . 
+            !venv/
+            !node_modules/
+        
+        - name: Configure deployment and runtime settings on the webapp
+          run: |
+            az configure --defaults ${{ env.RESOURCE_GROUP }}
+            az webapp config appsettings --name ${{ env.WEBAPP_NAME }} --settings \
+            SCM_DO_BUILD_DURING_DEPLOYMENT=true \
+            FLASK_ENV=production
           
         - name: 'Deploy to Azure Web App'
           uses: azure/webapps-deploy@v2
@@ -107,6 +118,6 @@ jobs:
           with:
            app-name: 'dccomics-web-dev'
            slot-name: 'production'
-           startup-command: 'pip install -r requirements.txt & gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'        
+           startup-command: 'gunicorn --bind=0.0.0.0:8000 --timeout 600 app:app'        
           env:
            MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
