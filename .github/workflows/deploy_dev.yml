@@ -1,37 +1,52 @@
-name: Azure Deployment
+name: Deploy to Azure
 
 on:
   push:
     branches:
-      - development
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Set up Azure CLI
-        uses: azure/login@v1
-        with:
-          client-id: ${{ secrets.AZURE_CLIENT_ID }}
-          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+    - name: Install Python dependencies
+      run: |
+        python -m venv env
+        source env/bin/activate
+        pip install -r requirements.txt
 
-      - name: Install Python Dependencies
-        run: |
-          pip install -r requirements.txt
+    - name: Set up Azure CLI
+      uses: azure/login@v1
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Deploy Bicep Template
-        run: |
-          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --verbose
+    - name: Deploy Bicep Template
+      uses: Azure/bicep-deploy@v1
+      with:
+        template-file: './deploy/dev.bicep'
+        parameters: |
+          location=eastus
+          resourceGroupName=dccomics
+          appServicePlanName=dccomics-hosting-dev
+          webAppName=dccomics-web-dev
+          pythonVersion=3.11
 
-      - name: Zip Flask App
-        run: |
-          zip -r app.zip app.py
+    - name: Deploy Python Web App
+      uses: azure/webapps-deploy@v2
+      with:
+        app-name: dccomics
+        slot-name: production
+        package: .
+        platform: python
+        version: '3.9'
+        port: 5000
+        startup-command: 'gunicorn --bind=0.0.0.0 --timeout 600 app:app'
 
-      - name: Deploy Flask App using Zip Deploy
-        run: |
-          az webapp deployment source config-zip --name dccomics-web-dev --resource-group dccomics --src app.zip
+    - name: Enable HTTPS
+      run: |
+        az webapp config set --resource-group my-resource-group --name dccomics-web-dev --https-only true
