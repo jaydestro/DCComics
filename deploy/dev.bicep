@@ -12,17 +12,23 @@ resource cosmosDbAccount 'Microsoft.DocumentDB/databaseAccounts@2021-04-15' = {
   name: cosmosDbAccountName
   kind: 'MongoDB'
   location: location
-  tags: {
-    deployment: 'development'
-  }
   properties: {
     databaseAccountOfferType: 'Standard'
+    locations: [
+      {
+        locationName: location
+      }
+    ]
+  }
+  tags: {
+    deployment: 'development'
   }
 }
 
 resource hostingPlan 'Microsoft.Web/serverfarms@2020-06-01' = {
   name: hostingPlanName
   location: location
+  kind: 'linux'
   tags: {
     deployment: 'development'
   }
