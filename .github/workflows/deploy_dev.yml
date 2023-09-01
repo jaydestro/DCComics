@@ -67,9 +67,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: python-app
-          path: |
-            .
-            !venv/
+          path: .
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
@@ -103,8 +101,7 @@ jobs:
 
       - name: Install Python Dependencies
         run: |
-          cd python-app
-          pip install -r requirements.txt
+          pip install -r python-app/requirements.txt
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
@@ -112,7 +109,7 @@ jobs:
         with:
           app-name: ${{ env.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: .
+          package: python-app  # Deploy the python-app directory
           platform: python
           version: ${{ env.PYTHON_VERSION }}
           slot-name: production
