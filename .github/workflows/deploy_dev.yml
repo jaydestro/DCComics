@@ -35,6 +35,11 @@ jobs:
           cosmos_db_connection_string=$(az cosmosdb keys list --name dccomics-mongodb-dev --resource-group dccomics --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
           echo "Cosmos DB connection string: $cosmos_db_connection_string"
           echo "::set-output name=connection_string::$cosmos_db_connection_string"
+      
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
 
       - name: Install Python Dependencies
         run: |
