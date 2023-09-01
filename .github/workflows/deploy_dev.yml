@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 jobs:
-  delete-existing-resources:
+  deploy-bicep-and-app:
     runs-on: ubuntu-latest
     steps:
       # Step 1: Checkout repository
@@ -36,7 +36,7 @@ jobs:
       - name: Deploy Python Web App
         uses: azure/webapps-deploy@v2
         with:
-          app-name: dccomics
+          app-name: dccomics-web-dev
           slot-name: production
           package: .
           platform: python
