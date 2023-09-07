@@ -4,6 +4,7 @@ env:
   MONGODB_SERVER_NAME: dccomics-mongodb-dev # Replace with your Azure Cosmos DB name
   AZURE_WEBAPP_NAME: dccomics-web-dev # Replace with your Azure Web App name
   RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
+  PYTHON_VERSION: 3.9 # Replace with your Python version
 
 on:
   push:
@@ -54,14 +55,6 @@ jobs:
         with:
           python-version: "3.9"
 
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
 
       - name: Upload artifact for deployment jobs
@@ -70,7 +63,7 @@ jobs:
           name: python-app
           path: |
             . 
-            !venv/
+            node_modules/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
@@ -110,7 +103,14 @@ jobs:
           path: |
             . 
             !venv/
-            !node_modules/
+            node_modules/
+
+      - uses: azure/appservice-settings@v1
+        with:
+          app-name: "${{ env.AZURE_WEBAPP_NAME }}"
+          mask-inputs: false
+          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"}' #'General configuration settings as Key Value pairs'
+          
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v2
@@ -119,5 +119,3 @@ jobs:
           app-name: "dccomics-web-dev"
           slot-name: "production"
           startup-command: "python ./app.py"
-        env:
-          MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }} # Use the retrieved MongoDB URI
