@@ -33,7 +33,7 @@ jobs:
         run: |
           python ./app.py &
           sleep 60  # Wait for the app to start
-          response_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/)
+          response_code=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/)
           if [ "$response_code" = "200" ]; then
             echo "App responded with 200 OK"
           else
