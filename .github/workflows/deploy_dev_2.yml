@@ -6,7 +6,7 @@ env:
   RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
   PYTHON_VERSION: 3.9 # Replace with your Python version
 
-on:e
+on:
   push:
     branches:
       - development
