@@ -6,7 +6,7 @@ env:
   RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
   PYTHON_VERSION: 3.9 # Replace with your Python version
 
-on:
+on:e
   push:
     branches:
       - development
@@ -80,7 +80,7 @@ jobs:
       - name: Get Cosmos DB connection string
         id: get-cosmosdb-connection-string
         run: |
-          cosmos_db_connection_string=$(az cosmosdb keys list --name ${{ env.MONGODB_SERVER_NAME }} --resource-group dccomics --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
+          cosmos_db_connection_string=$(az cosmosdb keys list --name ${{ env.MONGODB_SERVER_NAME }} --resource-group ${{env.RESOURCE_GROUP}} --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
           echo "Cosmos DB connection string: $cosmos_db_connection_string"
           echo "::set-output name=mongodb_uri::$cosmos_db_connection_string"
 
@@ -118,4 +118,4 @@ jobs:
         with:
           app-name: "dccomics-web-dev"
           slot-name: "production"
-          startup-command: "python ./app.py"
+          startup-command: "gunicorn -b 0.0.0.0:8000 app:app"
