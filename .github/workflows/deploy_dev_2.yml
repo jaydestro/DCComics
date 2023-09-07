@@ -1,9 +1,9 @@
 name: Build and deploy Python app to Azure Web App - dccomics-web-dev
 
 env:
-  MONGODB_SERVER_NAME: dccomics-mongodb-dev   # Replace with your Azure Cosmos DB name
-  AZURE_WEBAPP_NAME: dccomics-web-dev  # Replace with your Azure Web App name
-  RESOURCE_GROUP: dccomics  # Replace with your Azure Resource Group name
+  MONGODB_SERVER_NAME: dccomics-mongodb-dev # Replace with your Azure Cosmos DB name
+  AZURE_WEBAPP_NAME: dccomics-web-dev # Replace with your Azure Web App name
+  RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
 
 on:
   push:
@@ -14,7 +14,7 @@ on:
 permissions:
   id-token: write
   contents: read
-  
+
 jobs:
   deploy-bicep:
     runs-on: ubuntu-latest
@@ -32,21 +32,15 @@ jobs:
       - name: Check if resources tagged with "development" exist
         run: |
           # Use the Azure CLI to list resources with the specified tag
-          tagExists=$(az resource list --tag "development" --query "[?tagName=='development'].length(@)" --output tsv)
-          
-          if [[ $tagExists -gt 0 ]]; then
-            echo "Resources tagged with 'deployment=development' exist. Skipping Bicep deployment."
-            exit 0  # Exit the workflow successfully
-          else
+                    
+          output=$(az resource list --tag "deployment=development" --query "[?resourceGroup == '${{ env.RESOURCE_GROUP }}']" -o tsv)
+          if [[ -z "$output" ]]; then
             echo "No resources tagged with 'deployment=development' found. Proceeding with Bicep deployment."
+            az deployment group create --resource-group ${{ env.RESOURCE_GROUP }} --template-file ./deploy/dev.bicep --parameters location=eastus
+          else
+            echo "Resources tagged with 'deployment=development' exist. Skipping Bicep deployment."
           fi
         shell: bash
-
-      - name: Deploy Bicep Template
-        id: deploy-bicep-template
-        run: |
-          echo "Deploying Bicep template..."
-          az deployment group create --resource-group dccomics --template-file ./deploy/dev.bicep --parameters location=eastus
 
   build:
     runs-on: ubuntu-latest
@@ -58,18 +52,18 @@ jobs:
       - name: Set up Python version
         uses: actions/setup-python@v1
         with:
-          python-version: '3.9'
+          python-version: "3.9"
 
       - name: Create and start virtual environment
         run: |
           python -m venv venv
           source venv/bin/activate
-      
+
       - name: Install dependencies
         run: pip install -r requirements.txt
-        
+
       # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
-      
+
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
         with:
@@ -80,7 +74,7 @@ jobs:
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
-    needs: build  # Wait for the Python application build to complete
+    needs: build # Wait for the Python application build to complete
 
     steps:
       - name: Set up Azure CLI
@@ -102,28 +96,28 @@ jobs:
     needs: [build, deploy-bicep, retrieve-mongodb-uri]
 
     steps:
-        - name: Set up Azure CLI
-          uses: azure/login@v1
-          with:
-            client-id: ${{ secrets.AZURE_CLIENT_ID }}
-            tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-            subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - name: Set up Azure CLI
+        uses: azure/login@v1
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-        - name: Download artifact from build job
-          uses: actions/download-artifact@v2
-          with:
-            name: python-app
-            path: |
-              . 
-              !venv/
-              !node_modules/
-        
-        - name: 'Deploy to Azure Web App'
-          uses: azure/webapps-deploy@v2
-          id: deploy-to-webapp
-          with:
-            app-name: 'dccomics-web-dev'
-            slot-name: 'production'
-            startup-command: 'python ./app.py'
-          env:
-            MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}  # Use the retrieved MongoDB URI
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v2
+        with:
+          name: python-app
+          path: |
+            . 
+            !venv/
+            !node_modules/
+
+      - name: "Deploy to Azure Web App"
+        uses: azure/webapps-deploy@v2
+        id: deploy-to-webapp
+        with:
+          app-name: "dccomics-web-dev"
+          slot-name: "production"
+          startup-command: "python ./app.py"
+        env:
+          MONGODB_URI: ${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }} # Use the retrieved MongoDB URI
