@@ -33,7 +33,7 @@ jobs:
       - name: Check if resources tagged with "development" exist
         run: |
           # Use the Azure CLI to list resources with the specified tag
-                    
+
           output=$(az resource list --tag "deployment=development" --query "[?resourceGroup == '${{ env.RESOURCE_GROUP }}']" -o tsv)
           if [[ -z "$output" ]]; then
             echo "No resources tagged with 'deployment=development' found. Proceeding with Bicep deployment."
@@ -62,7 +62,7 @@ jobs:
         with:
           name: python-app
           path: |
-            . 
+            .
             node_modules/
 
   retrieve-mongodb-uri:
@@ -101,7 +101,7 @@ jobs:
         with:
           name: python-app
           path: |
-            . 
+            .
             !venv/
             node_modules/
 
@@ -109,8 +109,8 @@ jobs:
         with:
           app-name: "${{ env.AZURE_WEBAPP_NAME }}"
           mask-inputs: false
-          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT" = "true"}' #'General configuration settings as Key Value pairs'
-          
+          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
+
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v2
