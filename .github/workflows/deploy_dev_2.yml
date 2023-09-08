@@ -55,7 +55,22 @@ jobs:
         with:
           python-version: "3.9"
 
-      # Optional: Add step to run tests here (PyTest, Django test suites, etc.)
+
+      - name: Create and start virtual environment
+        run: |
+          python -m venv venv
+          source venv/bin/activate
+
+      - name: Set up dependency caching for faster installs
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
@@ -63,7 +78,7 @@ jobs:
           name: python-app
           path: |
             .
-            node_modules/
+            !venv/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
