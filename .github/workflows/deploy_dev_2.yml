@@ -66,7 +66,8 @@ jobs:
       - name: python install
         working-directory: ${{ env.WORKING_DIRECTORY }}
         run: |
-          sudo apt install python${{ env.PYTHON_VERSION }}-venv
+          sudo apt-get update
+          sudo apt install python3-venv
           python -m venv --copies antenv
           source antenv/bin/activate
           pip install setuptools
