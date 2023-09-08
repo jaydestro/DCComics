@@ -132,6 +132,6 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: "dccomics-web-dev"
-          package: "python-app"
+          package: "."
           slot-name: "production"
           startup-command: "gunicorn -b 0.0.0.0:8000 app:app"
