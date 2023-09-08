@@ -5,6 +5,7 @@ env:
   AZURE_WEBAPP_NAME: dccomics-web-dev # Replace with your Azure Web App name
   RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
   PYTHON_VERSION: 3.9 # Replace with your Python version
+  WORKING_DIRECTORY: '.'
 
 on:
   push:
@@ -61,24 +62,23 @@ jobs:
           python -m venv venv
           source venv/bin/activate
 
-      - name: Set up dependency caching for faster installs
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+        # install dependencies
+      - name: python install
+        working-directory: ${{ env.WORKING_DIRECTORY }}
+        run: |
+          sudo apt install python${{ env.PYTHON_VERSION }}-venv
+          python -m venv --copies antenv
+          source antenv/bin/activate
+          pip install setuptools
+          pip install -r requirements.txt
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
-      - name: Upload artifact for deployment jobs
-        uses: actions/upload-artifact@v2
-        with:
-          name: python-app
-          path: |
-            .
-            !venv/
+#      - name: Upload artifact for deployment jobs
+#        uses: actions/upload-artifact@v2
+#        with:
+#          name: python-app
+#          path: |
+#            .
+#            !venv/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
@@ -111,14 +111,14 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v2
-        with:
-          name: python-app
-          path: |
-            .
-            !venv/
-            node_modules/
+#      - name: Download artifact from build job
+#        uses: actions/download-artifact@v2
+#        with:
+#          name: python-app
+#          path: |
+#            .
+#            !venv/
+#            node_modules/
 
       - uses: azure/appservice-settings@v1
         with:
