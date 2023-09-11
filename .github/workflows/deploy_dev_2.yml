@@ -109,6 +109,6 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: "dccomics-web-dev"
-          package: "${{ env.WORKING_DIRECTORY }}/DCComics"
+          package: "${{ env.WORKING_DIRECTORY }}"
           slot-name: "production"
           startup-command: "gunicorn -b 0.0.0.0:8000 app:app"
