@@ -54,28 +54,12 @@ jobs:
         with:
           python-version: "3.9"
 
-
-      - name: Create and start virtual environment
-        run: |
-          python -m venv venv
-          source venv/bin/activate
-      - name: Set up dependency caching for faster installs
-        uses: actions/cache@v3
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
         with:
           name: python-app
           path: |
             .
-            !venv/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
@@ -125,6 +109,6 @@ jobs:
         id: deploy-to-webapp
         with:
           app-name: "dccomics-web-dev"
-          package: "."
+          package: "${{ env.WORKING_DIRECTORY }}/DCComics"
           slot-name: "production"
           startup-command: "gunicorn -b 0.0.0.0:8000 app:app"
