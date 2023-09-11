@@ -5,7 +5,6 @@ env:
   AZURE_WEBAPP_NAME: dccomics-web-dev # Replace with your Azure Web App name
   RESOURCE_GROUP: dccomics # Replace with your Azure Resource Group name
   PYTHON_VERSION: 3.9 # Replace with your Python version
-  WORKING_DIRECTORY: '.'
 
 on:
   push:
@@ -34,7 +33,6 @@ jobs:
       - name: Check if resources tagged with "development" exist
         run: |
           # Use the Azure CLI to list resources with the specified tag
-
           output=$(az resource list --tag "deployment=development" --query "[?resourceGroup == '${{ env.RESOURCE_GROUP }}']" -o tsv)
           if [[ -z "$output" ]]; then
             echo "No resources tagged with 'deployment=development' found. Proceeding with Bicep deployment."
@@ -61,17 +59,15 @@ jobs:
         run: |
           python -m venv venv
           source venv/bin/activate
-
-        # install dependencies
-      - name: python install
-        working-directory: ${{ env.WORKING_DIRECTORY }}
-        run: |
-          sudo apt-get update
-          sudo apt install python3-venv
-          python -m venv --copies antenv
-          source antenv/bin/activate
-          pip install setuptools
-          pip install -r requirements.txt
+      - name: Set up dependency caching for faster installs
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Install dependencies
+        run: pip install -r requirements.txt
 
       - name: Upload artifact for deployment jobs
         uses: actions/upload-artifact@v2
@@ -80,7 +76,6 @@ jobs:
           path: |
             .
             !venv/
-
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
     needs: build # Wait for the Python application build to complete
@@ -99,7 +94,6 @@ jobs:
           cosmos_db_connection_string=$(az cosmosdb keys list --name ${{ env.MONGODB_SERVER_NAME }} --resource-group ${{env.RESOURCE_GROUP}} --type connection-strings --query "connectionStrings[0].connectionString" --output tsv)
           echo "Cosmos DB connection string: $cosmos_db_connection_string"
           echo "::set-output name=mongodb_uri::$cosmos_db_connection_string"
-
   deploy:
     runs-on: ubuntu-latest
     needs: [build, deploy-bicep, retrieve-mongodb-uri]
@@ -120,15 +114,12 @@ jobs:
             .
             !venv/
             node_modules/
-
       - uses: azure/appservice-settings@v1
         with:
           app-name: "${{ env.AZURE_WEBAPP_NAME }}"
           mask-inputs: false
           general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
-      
-      - name: Activate Virtual Environment
-        run: source antenv/bin/activate
+
 
       - name: "Deploy to Azure Web App"
         uses: azure/webapps-deploy@v2
