@@ -75,6 +75,7 @@ jobs:
           name: python-app
           path: |
             .
+            !venv/
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
