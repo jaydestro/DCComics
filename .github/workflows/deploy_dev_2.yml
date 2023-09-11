@@ -58,8 +58,7 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: python-app
-          path: |
-            .
+          path: ./
 
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
