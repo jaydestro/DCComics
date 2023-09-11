@@ -75,7 +75,7 @@ jobs:
           name: python-app
           path: |
             .
-            !venv/
+            
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
     needs: build # Wait for the Python application build to complete
