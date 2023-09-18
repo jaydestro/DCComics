@@ -110,4 +110,3 @@ jobs:
           app-name: "dccomics-web-dev"
           package: "."
           slot-name: "production"
-          startup-command: "gunicorn -b 0.0.0.0:8000 app:app"
