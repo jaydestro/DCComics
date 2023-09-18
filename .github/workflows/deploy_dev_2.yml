@@ -100,7 +100,7 @@ jobs:
         with:
           app-name: "${{ env.AZURE_WEBAPP_NAME }}"
           mask-inputs: false
-          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ steps.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
+          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ jobs.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
 
 
       - name: "Deploy to Azure Web App"
