@@ -63,7 +63,8 @@ jobs:
   retrieve-mongodb-uri:
     runs-on: ubuntu-latest
     needs: build # Wait for the Python application build to complete
-
+    outputs:
+      mongodb_uri: ${{ steps.get-cosmosdb-connection-string.outputs.mongodb_uri }}
     steps:
       - name: Set up Azure CLI
         uses: azure/login@v1
@@ -100,7 +101,7 @@ jobs:
         with:
           app-name: "${{ env.AZURE_WEBAPP_NAME }}"
           mask-inputs: false
-          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ jobs.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
+          general-settings-json: '{"linuxFxVersion": "PYTHON|${{ env.PYTHON_VERSION }}", "MONGODB_URI": "${{ needs.retrieve-mongodb-uri.outputs.mongodb_uri }}", "SCM_DO_BUILD_DURING_DEPLOYMENT": "true"}' #'General configuration settings as Key Value pairs'
 
 
       - name: "Deploy to Azure Web App"
