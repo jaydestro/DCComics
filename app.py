@@ -4,23 +4,29 @@ from config import COSMOSDB_CONNECTION_STRING
 
 app = Flask(__name__)
 
-# Azure Cosmos DB connection setup
-client = CosmosClient.from_connection_string(COSMOSDB_CONNECTION_STRING)
-database_name = "DCComics"
-container_name = "ComicBooks"
+# Check if connection string is provided
+if not COSMOSDB_CONNECTION_STRING:
+    print("Error: No connection string provided. Please set the 'COSMOSDB_CONNECTION_STRING' in configuration.")
+    exit()
 
+# Azure Cosmos DB connection setup
 try:
+    client = CosmosClient.from_connection_string(COSMOSDB_CONNECTION_STRING)
+    database_name = "DCComics"
+    container_name = "ComicBooks"
+    
     database = client.create_database_if_not_exists(id=database_name)
     container = database.create_container_if_not_exists(
         id=container_name,
-        partition_key=PartitionKey(path="/Category_Title"),  # Use Category_Title as the partition key
+        partition_key=PartitionKey(path="/Issue_Link"),  # Use Issue_Link as the partition key
         offer_throughput=400
     )
 except exceptions.CosmosResourceExistsError:
     database = client.get_database_client(database=database_name)
     container = database.get_container_client(container_name)
 except Exception as e:
-    raise e
+    print(f"An error occurred while setting up Azure Cosmos DB connection: {e}")
+    exit()
 
 # Flask app route definitions
 @app.route("/", methods=["GET", "POST"])

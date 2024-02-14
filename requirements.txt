@@ -3,8 +3,5 @@ Flask-static
 gunicorn
 azure-cosmos
 jsonschema
-cosmos
-csv
 datetime
-flask
 tqdm
