@@ -1,54 +1,88 @@
 from flask import Flask, render_template, request
-import re
-from pymongo import MongoClient
-from config import MONGODB_URI  # Import the connection string
+from azure.cosmos import CosmosClient, PartitionKey, exceptions
+from config import COSMOSDB_CONNECTION_STRING
 
 app = Flask(__name__)
 
-# MongoDB connection setup
-client = MongoClient(MONGODB_URI)  # Use the imported connection string
-db = client["DCComics"]
-collection = db["ComicBooks"]
+# Check if connection string is provided
+if not COSMOSDB_CONNECTION_STRING:
+    print("Error: No connection string provided. Please set the 'COSMOSDB_CONNECTION_STRING' in configuration.")
+    exit()
 
-# Create an index for Issue_Name field
-collection.create_index([("Issue_Name", 1)])
+# Azure Cosmos DB connection setup
+try:
+    client = CosmosClient.from_connection_string(COSMOSDB_CONNECTION_STRING)
+    database_name = "DCComics"
+    container_name = "ComicBooks"
+    
+    database = client.create_database_if_not_exists(id=database_name)
+    container = database.create_container_if_not_exists(
+        id=container_name,
+        partition_key=PartitionKey(path="/Issue_Link"),  # Use Issue_Link as the partition key
+        offer_throughput=400
+    )
+except exceptions.CosmosResourceExistsError:
+    database = client.get_database_client(database=database_name)
+    container = database.get_container_client(container_name)
+except Exception as e:
+    print(f"An error occurred while setting up Azure Cosmos DB connection: {e}")
+    exit()
 
+# Flask app route definitions
 @app.route("/", methods=["GET", "POST"])
 def index():
-    total_comics = collection.count_documents({})  # Total number of comic books
+    # Fetch the total number of comics
+    total_comics = container.query_items(
+        query="SELECT VALUE COUNT(1) FROM c",
+        enable_cross_partition_query=True
+    ).next()
 
-    # Retrieve unique comic series values for dropdown
-    comic_series = collection.distinct("Comic_Series")
+    # Query to get distinct Category_Title values, excluding null
+    comic_series_query = "SELECT DISTINCT VALUE c.Comic_Series FROM c WHERE c.Comic_Series != null"
+    comic_series = list(container.query_items(
+        query=comic_series_query,
+        enable_cross_partition_query=True
+    ))
 
     if request.method == "POST":
         keyword = request.form.get("keyword")
-        selected_series = request.form.get("series")  # Get selected comic series from dropdown
-        
-        # Construct the search query based on the selected series
-        query = {
-            "$or": [
-                {"Issue_Name": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Issue_Link": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Pencilers": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Cover_Artists": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Inkers": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Writers": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Editors": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Executive_Editor": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Letterers": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Colourists": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Rating": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Comic_Series": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {},
-                {"Comic_Type": re.compile(keyword, re.IGNORECASE)} if isinstance(keyword, str) else {}
-            ]
-        }
-        if selected_series:  # Add series filter if a series is selected
-            query["Comic_Series"] = selected_series
-        
-        comics = collection.find(query)
-        return render_template("results.html", comics=comics, total_comics=total_comics)
+        selected_series = request.form.get("series")
 
+        # Start building the query and parameters
+        search_query = "SELECT * FROM c WHERE "
+        search_params = []
+        conditions = []
+
+        # Add condition for keyword if provided
+        if keyword:
+            conditions.append("CONTAINS(c.Issue_Name, @keyword, true)")
+            search_params.append({"name": "@keyword", "value": keyword})
+
+        # Add condition for selected series if provided and not 'All'
+        if selected_series and selected_series != 'All':
+            conditions.append("c.Comic_Series = @series")
+            search_params.append({"name": "@series", "value": selected_series})
+
+        # Combine conditions with 'AND' if any conditions are present
+        if conditions:
+            search_query += " AND ".join(conditions)
+        else:
+            # If no conditions, change query to select all items
+            search_query = "SELECT * FROM c"
+
+        # Execute the query
+        comics = list(container.query_items(
+            query=search_query,
+            parameters=search_params,
+            enable_cross_partition_query=True
+        ))
+
+        # Render the results template with the query results
+        return render_template("results.html", comics=comics)
+
+    # Render the index template with the list of comic series and total comic count
     return render_template("index.html", comic_series=comic_series, total_comics=total_comics)
 
+# Run the Flask app
 if __name__ == '__main__':
-   app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0')

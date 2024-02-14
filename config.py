@@ -1,1 +1,6 @@
-MONGODB_URI = "mongodb://127.0.0.1:27017/" # Connection string for MongoDB server
+# config.py
+
+COSMOSDB_CONNECTION_STRING = "" # Replace with your Azure Cosmos DB connection string
+database_name = "DCComics"
+container_name = "ComicBooks"
+partition_key_path = "/Issue_Link"

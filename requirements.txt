@@ -1,4 +1,7 @@
 Flask
-pymongo
 Flask-static
-uwsgi
+gunicorn
+azure-cosmos
+jsonschema
+datetime
+tqdm
