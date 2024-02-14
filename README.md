@@ -56,7 +56,9 @@ This directory contains static files like CSS stylesheets (`styles.css`) for sty
 
 ## Installation
 
-1. Fork this repository to your GitHub account and then clone it locally.
+1. Fork this repository to your GitHub account and then clone it locally or open in a Codespace.
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/jaydestro/DCComics)
 
 ```bash
 git clone https://github.com/yourusername/DCComics
