@@ -1,96 +1,82 @@
 from flask import Flask, render_template, request
-import re
-from pymongo import MongoClient
-from config import MONGODB_URI
-import os
-import asyncio
-import csv
+from azure.cosmos import CosmosClient, PartitionKey, exceptions
+from config import COSMOSDB_CONNECTION_STRING
 
 app = Flask(__name__)
 
-# MongoDB connection setup
-client = MongoClient(MONGODB_URI)
-db = client["DCComics"]
-collection = db["ComicBooks"]
+# Azure Cosmos DB connection setup
+client = CosmosClient.from_connection_string(COSMOSDB_CONNECTION_STRING)
+database_name = "DCComics"
+container_name = "ComicBooks"
 
-# Create an index for Issue_Name field
-collection.create_index([("Issue_Name", 1)])
-
-async def insert_documents_async(rows):
-    tasks = []
-    for row in rows:
-        tasks.append(asyncio.ensure_future(asyncio.to_thread(collection.insert_one, row)))
-    await asyncio.gather(*tasks)
-
-def import_csv_from_directory(data_directory):
-    total_comics_db = collection.count_documents({})
-    print(f"Total comics in database: {total_comics_db}")
-
-    csv_files = [f for f in os.listdir(data_directory) if f.endswith(".csv")]
-
-    if csv_files:
-        for csv_file in csv_files:
-            csv_file_location = os.path.join(data_directory, csv_file)
-            rows = []
-            with open(csv_file_location, 'r', encoding='utf-8') as csvfile:
-                reader = csv.DictReader(csvfile)
-                for row in reader:
-                    rows.append(row)
-
-            if rows:
-                total_comics_csv = len(rows)
-                print(f"Total comics in CSV {csv_file}: {total_comics_csv}")
-                if total_comics_db != total_comics_csv:
-                    print(f"Importing data from {csv_file}...")
-                    asyncio.run(insert_documents_async(rows))
-                    print(f"{total_comics_csv} documents inserted from {csv_file}.")
-                else:
-                    print(f"No data imported from {csv_file} as the number of comics in the database and CSV match.")
-            else:
-                print(f"No data imported from {csv_file} as the number of comics in the database and CSV match.")
-
-# Data import if the script is run directly
-if __name__ == '__main__':
-    import_csv_from_directory("data")  # Import CSV from the 'data' directory
+try:
+    database = client.create_database_if_not_exists(id=database_name)
+    container = database.create_container_if_not_exists(
+        id=container_name,
+        partition_key=PartitionKey(path="/Category_Title"),  # Use Category_Title as the partition key
+        offer_throughput=400
+    )
+except exceptions.CosmosResourceExistsError:
+    database = client.get_database_client(database=database_name)
+    container = database.get_container_client(container_name)
+except Exception as e:
+    raise e
 
 # Flask app route definitions
 @app.route("/", methods=["GET", "POST"])
 def index():
-    total_comics = collection.count_documents({})
-    comic_series = collection.distinct("Comic_Series")
+    # Fetch the total number of comics
+    total_comics = container.query_items(
+        query="SELECT VALUE COUNT(1) FROM c",
+        enable_cross_partition_query=True
+    ).next()
+
+    # Query to get distinct Category_Title values, excluding null
+    comic_series_query = "SELECT DISTINCT VALUE c.Comic_Series FROM c WHERE c.Comic_Series != null"
+    comic_series = list(container.query_items(
+        query=comic_series_query,
+        enable_cross_partition_query=True
+    ))
 
     if request.method == "POST":
         keyword = request.form.get("keyword")
         selected_series = request.form.get("series")
 
-        query_conditions = []
+        # Start building the query and parameters
+        search_query = "SELECT * FROM c WHERE "
+        search_params = []
+        conditions = []
 
-        if isinstance(keyword, str) and keyword:
-            compiled_keyword = re.compile(keyword, re.IGNORECASE)
+        # Add condition for keyword if provided
+        if keyword:
+            conditions.append("CONTAINS(c.Issue_Name, @keyword, true)")
+            search_params.append({"name": "@keyword", "value": keyword})
 
-            query_conditions.append({"Issue_Name": compiled_keyword})
-            query_conditions.append({"Issue_Link": compiled_keyword})
-            query_conditions.append({"Pencilers": compiled_keyword})
-            query_conditions.append({"Cover_Artists": compiled_keyword})
-            query_conditions.append({"Inkers": compiled_keyword})
-            query_conditions.append({"Writers": compiled_keyword})
-            query_conditions.append({"Editors": compiled_keyword})
-            query_conditions.append({"Executive_Editor": compiled_keyword})
-            query_conditions.append({"Letterers": compiled_keyword})
-            query_conditions.append({"Colourists": compiled_keyword})
-            query_conditions.append({"Rating": compiled_keyword})
-            query_conditions.append({"Comic_Series": compiled_keyword})
-            query_conditions.append({"Comic_Type": compiled_keyword})
+        # Add condition for selected series if provided and not 'All'
+        if selected_series and selected_series != 'All':
+            conditions.append("c.Comic_Series = @series")
+            search_params.append({"name": "@series", "value": selected_series})
 
-        if selected_series:
-            query_conditions.append({"Comic_Series": selected_series})
+        # Combine conditions with 'AND' if any conditions are present
+        if conditions:
+            search_query += " AND ".join(conditions)
+        else:
+            # If no conditions, change query to select all items
+            search_query = "SELECT * FROM c"
 
-        query = {"$or": query_conditions}
+        # Execute the query
+        comics = list(container.query_items(
+            query=search_query,
+            parameters=search_params,
+            enable_cross_partition_query=True
+        ))
 
-        comics = collection.find(query)
-        return render_template("results.html", comics=comics, total_comics=total_comics)
+        # Render the results template with the query results
+        return render_template("results.html", comics=comics)
 
+    # Render the index template with the list of comic series and total comic count
     return render_template("index.html", comic_series=comic_series, total_comics=total_comics)
 
+# Run the Flask app
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

@@ -1,29 +1,29 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Comic Book Search</title>
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <h1>Comic Book Keyword Search</h1>
     <form method="POST">
-        <label for="keyword">Enter Keyword: </label>
-        <input type="text" id="keyword" name="keyword" required>
-
+        <label for="keyword">Enter Keyword:</label>
+        <input type="text" id="keyword" name="keyword" placeholder="Search for comics..." required>
         <button type="submit">Search</button>
     </form>
     
     <br>
     <h2>Or browse by Comic Series:</h2>
     <form method="POST">
-        <label for="series">Select Comic Series: </label>
+        <label for="series">Select Comic Series:</label>
         <select id="series" name="series">
             <option value="">All</option>
             {% for series in comic_series %}
                 <option value="{{ series }}">{{ series }}</option>
             {% endfor %}
         </select>
-
         <button type="submit">Browse</button>
     </form>
     
