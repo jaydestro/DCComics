@@ -2,17 +2,6 @@
 
 This repository contains a simple web application built using Flask and Azure Cosmos DB that enables users to search for comic book information based on keywords.
 
-## Table of Contents
-
-- [Introduction](#introduction)
-- [Features](#features)
-- [Requirements](#requirements)
-- [Components](#components)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Data Source](#data-source)
-- [License](#license)
-
 ## Introduction
 
 The DC Comics Comic Book Search Web App is designed to help users search for comic book information from an Azure Cosmos DB database using keyword-based queries. The web app uses Flask for the backend and provides a user-friendly interface for searching and displaying comic book details.
@@ -98,7 +87,7 @@ python import.py
 
 1. Run the Flask app:
 
-```bash 
+```bash
 python app.py
 ```
 
