@@ -64,23 +64,23 @@ This directory contains static files like CSS stylesheets (`styles.css`) for sty
 git clone https://github.com/yourusername/DCComics
 ```
 
-2. Navigate to the project directory:
+1. Navigate to the project directory:
 
 ```bash
 cd dccomics
 ```
 
-3. Install the required dependencies using pip:
+1. Install the required dependencies using pip:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Before running the Data Importer (`import.py`), configure the Azure Cosmos DB connection details.
+1. Before running the Data Importer (`import.py`), configure the Azure Cosmos DB connection details.
 
-5. Open the `config.py` file in a text editor.
+1. Open the `config.py` file in a text editor.
 
-6. Update the Azure Cosmos DB connection string to match your Azure Cosmos DB setup. Modify the following line with your Azure Cosmos DB URI:
+1. Update the Azure Cosmos DB connection string to match your Azure Cosmos DB setup. Modify the following line with your Azure Cosmos DB URI:
 
 ```python
 COSMOSDB_CONNECTION_STRING = "your_connection_string_here"
@@ -88,15 +88,15 @@ COSMOSDB_CONNECTION_STRING = "your_connection_string_here"
 
 > **Note:** You can sign up for a free Azure Cosmos DB account by going to [https://aka.ms/trycosmosdb](https://aka.ms/trycosmosdb). Start building with no credit card!
 
-7. Save and close the `config.py` file.
+1. Save and close the `config.py` file.
 
-8. Run the Data Importer to populate your Azure Cosmos DB database with comic book data:
+1. Run the Data Importer to populate your Azure Cosmos DB database with comic book data:
 
 ```bash
 python import.py
 ```
 
-9. Run the Flask app:
+1. Run the Flask app:
 
 ```bash 
 python app.py
